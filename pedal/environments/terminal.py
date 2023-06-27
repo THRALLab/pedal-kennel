@@ -7,6 +7,7 @@ from pedal.core.report import MAIN_REPORT
 from pedal.resolvers.core import make_resolver
 from pedal.sandbox import run, get_sandbox, set_input, start_trace
 from pedal.tifa import tifa_analysis
+from pedal.gpt import gpt_get_api_key, gpt_run_prompts
 from pedal.resolvers.simple import resolve
 from pedal.core.formatting import Formatter
 
@@ -46,7 +47,7 @@ class TerminalEnvironment(Environment):
     def __init__(self, files=None, main_file='answer.py', main_code=None,
                  user=None, assignment=None, course=None, execution=None,
                  instructor_file='on_run.py', skip_tifa=False, skip_run=False,
-                 inputs=None, set_correct=True, set_success=None,
+                 skip_gpt=False, openai_api_key='', inputs=None, set_correct=True, set_success=None,
                  report=MAIN_REPORT, trace=True, threaded=False, real_io=True):
         super().__init__(files=files, main_file=main_file, main_code=main_code,
                          user=user, assignment=assignment, course=course,
@@ -69,6 +70,8 @@ class TerminalEnvironment(Environment):
             if real_io:
                 block_real_io()
         student.threaded = threaded
+        if not skip_gpt:
+            gpt_run_prompts(gpt_get_api_key(openai_api_key), report=report)
         self.fields = {
             'student': student,
             'resolve': resolve_on_terminal

@@ -93,7 +93,7 @@ class Bundle:
             result=self.result.to_json()
         )
 
-    def run_ics_bundle(self, resolver='resolve', skip_tifa=False, skip_run=False):
+    def run_ics_bundle(self, resolver='resolve', skip_tifa=False, skip_run=False, skip_gpt=False, openai_api_key=''):
         """
         Runs the given instructor control script on the given submission, with the
         accompany contextualizations.
@@ -109,6 +109,8 @@ class Bundle:
             global_data.update(env.setup_environment(self.submission,
                                                      skip_tifa=skip_tifa,
                                                      skip_run=skip_run,
+                                                     skip_gpt=skip_gpt,
+                                                     openai_api_key=openai_api_key,
                                                      threaded=self.config.threaded).fields)
         else:
             MAIN_REPORT.contextualize(self.submission)
@@ -305,7 +307,9 @@ class AbstractPipeline:
         for bundle in self.submissions:
             bundle.run_ics_bundle(resolver=self.config.resolver,
                                   skip_tifa=self.config.skip_tifa,
-                                  skip_run=self.config.skip_run)
+                                  skip_run=self.config.skip_run,
+                                  skip_gpt=self.config.skip_gpt,
+                                  openai_api_key=self.config.openai_api_key)
 
     def process_output(self):
         for bundle in self.submissions:
