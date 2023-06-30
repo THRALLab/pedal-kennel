@@ -4,17 +4,14 @@ A simple environment for quickly running Pedal code.
 
 import sys
 
-from pedal.assertions import resolve_all
 from pedal.core.environment import Environment
 from pedal.core.report import MAIN_REPORT
 from pedal.source import verify
 from pedal.cait import parse_program
-from pedal.sandbox.commands import run
 from pedal.resolvers import simple
 from pedal.sandbox import run, get_sandbox, set_input, start_trace
 from pedal.tifa import tifa_analysis
 from pedal.gpt import gpt_get_api_key, gpt_run_prompts
-from pedal.resolvers.simple import resolve
 
 
 def parse_argv():
@@ -69,7 +66,7 @@ class StandardEnvironment(Environment):
             gpt_run_prompts(gpt_get_api_key(openai_api_key), report=report)
         self.fields = {
             'student': student,
-            'resolve': resolve
+            'resolve': self.print_resolve
         }
         self.set_correct = set_correct or set_success
 

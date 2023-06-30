@@ -4,6 +4,7 @@ Tests related to checking function definitions
 
 import unittest
 
+from pedal.utilities.system import IS_AT_LEAST_PYTHON_311
 from pedal import unit_test, block_function, evaluate, CommandBlock, run
 from pedal.assertions.static import *
 from pedal.types.new_types import DictType, LiteralStr, StrType
@@ -37,7 +38,7 @@ The function named x has a parameter named c that is a list of integers, but sho
         with Execution('D = list\ndef x(a: int, c: D) -> str: pass\nx\nD') as e:
             f = ensure_function('x', parameters=(int, 'int'), returns=str)
             self.assertTrue(f)
-        print(f.fields)
+        #print(f.fields)
         self.assertFeedback(e, "Wrong Parameter Type\n"
                                "The function named x "
                                "has a parameter named c "
@@ -103,10 +104,10 @@ A TypeError occurred:
 The traceback was:
 Line 5 of file answer.py
     make_polite("Pet the dog")
-
+""" + ('    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n' if IS_AT_LEAST_PYTHON_311 else "") + """
 Line 3 of file answer.py in make_polite
         return ", please"+make_polite
-
+""" + ('               ^^^^^^^^^^^^^^^^^^^^^^\n' if IS_AT_LEAST_PYTHON_311 else "") + """
 
 Type errors occur when you use an operator or function on the wrong type of value. For example, using `+` to add to a list (instead of `.append`), or dividing a string by a number.
 

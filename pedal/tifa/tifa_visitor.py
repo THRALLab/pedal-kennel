@@ -211,6 +211,7 @@ class Tifa(TifaCore, ast.NodeVisitor):
             target (ast.AST): The target AST Node.
             target_type (Type): The new TIFA type.
             operation (None | ast.op): The AugAssign operation, if there is one
+            store_with_read: Whether to store the variable as a read variable, or just a write variable.
 
         Returns:
 
@@ -540,9 +541,13 @@ class Tifa(TifaCore, ast.NodeVisitor):
 
     def fill_in_location(self, node, source_node):
         node.lineno = source_node.lineno
-        node.end_lineno = source_node.end_lineno
         node.col_offset = source_node.col_offset
-        node.end_col_offset = source_node.end_col_offset
+        if IS_AT_LEAST_PYTHON_38:
+            node.end_lineno = source_node.end_lineno
+            node.end_col_offset = source_node.end_col_offset
+        else:
+            node.end_lineno = source_node.lineno
+            node.end_col_offset = source_node.col_offset
 
     def visit_Dict(self, node):
         """

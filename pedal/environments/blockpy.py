@@ -49,7 +49,7 @@ from pedal.core.report import MAIN_REPORT
 from pedal.sandbox import run, get_sandbox, set_input, start_trace
 from pedal.tifa import tifa_analysis
 from pedal.gpt import gpt_get_api_key, gpt_run_prompts
-from pedal.resolvers.simple import resolve
+from pedal.resolvers import print_resolve
 from pedal.resolvers.statistics import resolve as stats_resolve
 
 
@@ -84,7 +84,7 @@ class BlockPyEnvironment(Environment):
             gpt_run_prompts(gpt_get_api_key(openai_api_key), report=report)
         self.fields = {
             'student': student,
-            'resolve': resolve,
+            'resolve': print_resolve,
             'stats_resolve': stats_resolve
         }
 
