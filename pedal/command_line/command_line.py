@@ -141,6 +141,10 @@ def parse_args(reduced_mode=False):
                         default=False)
     parser.add_argument('--openai-api-key', help="The OpenAI API key",
                         default='')
+    parser.add_argument('--log_level', help="Set the logging level for Pedal.",
+                        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                        default="ERROR")
+
     '''
     parser.add_argument('--include_submissions', help='An optional REGEX filter '
                                                       'to only include certain submissions')
