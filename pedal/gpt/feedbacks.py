@@ -14,15 +14,16 @@ class gpt_prompt_feedback(Feedback):
 
     Args:
         instructions:
-        report:
     """
-    category = FeedbackCategory.INSTRUCTIONS
-    kind = FeedbackKind.INSTRUCTIONAL
+
+    category = FeedbackCategory.INSTRUCTOR
+    kind = FeedbackKind.HINT
     justification = 'Prompt Feedback'
     title = 'Prompt Feedback'
-    priority = 'instructions'
+    priority = "highest"
     tool = TOOL_NAME
     valence = 0
+    score = 0
 
     def __init__(self, instructions, **kwargs):
-        super().__init__(message=instructions, **kwargs)
+        super().__init__(message=instructions['feedback'], score=instructions['score'], **kwargs)

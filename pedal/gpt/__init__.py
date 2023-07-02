@@ -7,7 +7,7 @@ DESCRIPTION = '''
 '''
 REQUIRES = []
 OPTIONALS = []
-CATEGORY = 'Instructions'
+CATEGORY = "highest"
 
 __all__ = ['NAME', 'DESCRIPTION', 'SHORT_DESCRIPTION', 'REQUIRES', 'OPTIONALS',
            'gpt_get_api_key', 'gpt_run_prompts']

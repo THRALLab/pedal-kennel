@@ -5,7 +5,7 @@ Initialize and setup the OpenAI tool.
 from pedal.core.report import MAIN_REPORT, Report
 from pedal.gpt.constants import TOOL_NAME
 
-
+#we need setup.py?
 def reset(report=MAIN_REPORT):
     """
     Remove all settings for the OpenAI tool.

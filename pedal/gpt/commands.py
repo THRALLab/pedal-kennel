@@ -23,18 +23,6 @@ def gpt_get_api_key(default):
     """
     return os.getenv("OPENAI_API_KEY", default=default)
 
-
-def add_feedback(feedback, report):
-    """
-    Adds a feedback message.
-
-    Args:
-        feedback (str):
-        report:
-    """
-    report[TOOL_NAME]['feedback'].append(gpt_prompt_feedback(feedback))
-
-
 def gpt_run_prompts(api_key, code=None, report=MAIN_REPORT):
     """
     Evaluates the prompts and attach the results to the Report.
@@ -49,43 +37,88 @@ def gpt_run_prompts(api_key, code=None, report=MAIN_REPORT):
     if not code:
         code = report.submission.main_code
 
-    prompts = [f"""Here is my Python code:
-    {code}
-    Please identify any problems with it."""]
+    prompt = f"""{code}"""
 
-    feedback = report[TOOL_NAME]['feedback']
+    messages = [
+        {'role': 'system',
+         'content': "You are an intelligent tutor for a introductory computer science course in Python. You never give answers but do give helpful tips guide students with their code."},
+        {'role': 'user', 'content': prompt}
+    ]
 
-    for prompt in prompts:
-        response = openai.ChatCompletion.create(
-            model='gpt-3.5-turbo-0613',  # must add -0613 for functions??
-            messages=[{'role': 'user', 'content': prompt}],
-            functions=[
-                {
-                    'name': 'add_feedback',
-                    'description': 'Called when there is a problem with the code. ' +
-                                   'If there are no problems, do not call the function.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'feedback': {
-                                'type': 'string',
-                                'description': 'A concise message explaining the problem with the code.'
-                            }
+    #print(prompt)
+    response = openai.ChatCompletion.create(
+        model='gpt-3.5-turbo-0613',  # must add -0613 for functions??
+        messages=messages,
+        functions=[
+            {
+                'name': 'gpt_prompt_feedback',
+                'description': 'Called when there is a problem with the code. ' +
+                               'If there are no problems, do not call the function.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'feedback': {
+                            'type': 'string',
+                            'description': 'Helpful tips to guide a student with their problematic code.'
                         },
-                        'required': ['feedback']
-                    }
+                    },
+                    'required': ['feedback']
                 }
-            ],
-            function_call='auto'
-        )
-        response_message = response['choices'][0]['message']
+            }
+        ],
+        function_call={"name": "gpt_prompt_feedback"},
+        temperature=1.8,
+        top_p=0.5
+    )
 
-        if response_message.get('function_call'):
-            # todo: handle incorrect responses
-            if response_message['function_call']['name'] == 'add_feedback':
-                args = json.loads(response_message["function_call"]["arguments"])
-                add_feedback(args['feedback'], report)
-            else:
-                print('Invalid function:', response_message['function_call']['name'])
+    #print(response)
+    response_message = response.choices[0].message.function_call.arguments
+
+    second_response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo-0613",
+        messages=messages,
+        functions=[
+            {
+                'name': 'gpt_prompt_feedback',
+                'description': 'Called when there is a problem with the code. ' +
+                               'If there are no problems, do not call the function.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'score': {
+                            'type': 'string',
+                            'description': 'On a scale 0-10, what would you score their code?'
+                        },
+                        'error': {
+                            'type': 'string',
+                            'description': 'List all the error types the code produces.'
+                        },
+                    },
+                    'required': ['score', 'error']
+                }
+            }
+        ],
+        function_call={"name": "gpt_prompt_feedback"},
+        temperature=0.1,
+        top_p=0.5
+    )
+
+    #print(second_response)
+    second_response_message = second_response.choices[0].message.function_call.arguments
+
+    if second_response.choices[0].message.function_call:
+        # todo: handle incorrect responses
+        if second_response.choices[0].message.function_call.name == 'gpt_prompt_feedback':
+            args = json.loads(second_response_message)
+            fields = {
+                'feedback': json.loads(response_message)['feedback'],
+                'score': args['score'],
+                'error': args['error']
+            }
+            gpt_prompt_feedback(fields)
         else:
-            print('Response:', response_message['content'])
+            #needs error handling
+            print('Invalid function:', second_response_message['function_call']['name'])
+    else:
+        # needs error handling
+        print('Response:', second_response_message['content'])
