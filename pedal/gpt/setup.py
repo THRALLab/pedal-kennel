@@ -16,9 +16,7 @@ def reset(report=MAIN_REPORT):
     Returns:
         This tool's data
     """
-    report[TOOL_NAME] = {
-        'feedback': []
-    }
+    report[TOOL_NAME] = {}
     return report[TOOL_NAME]
 
 
