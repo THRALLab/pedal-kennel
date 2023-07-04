@@ -14,6 +14,7 @@ except ImportError:
 __all__ = ['gpt_get_api_key', 'gpt_run_prompts']
 
 OPENAI_DEFAULT_MODEL = 'gpt-3.5-turbo-0613'  # 'gpt-4-0613'
+OPENAI_RETRY_COUNT = 3
 
 
 def gpt_get_api_key(default):
@@ -74,6 +75,7 @@ def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_
     """
     if not openai:
         system_error(TOOL_NAME, 'Could not load OpenAI library!', report=report)
+        return
     openai.api_key = api_key
 
     if not code:
@@ -94,7 +96,13 @@ def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_
     ]
 
     feedback_result = None
+    tries = 0
     while not feedback_result:
+        tries += 1
+        if tries > OPENAI_RETRY_COUNT:
+            system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
+            return
+
         feedback_result = run_prompt(
             model=model,
             messages=messages,
@@ -119,8 +127,12 @@ def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_
             temperature=0.7)
 
     score_result = None
+    tries = 0
     while not score_result:
-        prompt = f"""{code}"""
+        tries += 1
+        if tries > OPENAI_RETRY_COUNT:
+            system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
+            return
 
         score_result = run_prompt(
             model=model,
