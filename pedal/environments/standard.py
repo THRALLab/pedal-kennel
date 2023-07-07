@@ -11,7 +11,6 @@ from pedal.cait import parse_program
 from pedal.resolvers import simple
 from pedal.sandbox import run, get_sandbox, set_input, start_trace
 from pedal.tifa import tifa_analysis
-from pedal.gpt import gpt_get_api_key, gpt_run_prompts
 
 
 def parse_argv():
@@ -40,7 +39,7 @@ class StandardEnvironment(Environment):
     def __init__(self, files=None, main_file='answer.py', main_code=None,
                  user=None, assignment=None, course=None, execution=None,
                  instructor_file='on_run.py', skip_tifa=False, set_correct=True, set_success=None,
-                 skip_run=False, skip_gpt=False, openai_api_key='', report=MAIN_REPORT, trace=True, threaded=False):
+                 skip_run=False, report=MAIN_REPORT, trace=True, threaded=False):
         # Possibly user passed in stuff via the command line.
         if files is None and main_code is None:
             (instructor_file, files, main_file, main_code, user, assignment,
@@ -62,8 +61,6 @@ class StandardEnvironment(Environment):
                 start_trace()
             student = run(report=report, threaded=threaded)
             student.threaded = threaded
-        if not skip_gpt:
-            gpt_run_prompts(gpt_get_api_key(openai_api_key), report=report)
         self.fields = {
             'student': student,
             'resolve': self.print_resolve

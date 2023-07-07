@@ -126,8 +126,6 @@ def parse_args(reduced_mode=False):
                         default=False, action='store_true')
     parser.add_argument('--skip_run', help="Skip automatically running student code in the environment",
                         default=False, action='store_true')
-    parser.add_argument('--skip_gpt', help="Skip using GPT tool",
-                        default=False, action='store_true')
     parser.add_argument('--progsnap_events', help="Choose what level of event"
                                                   " to capture from Progsnap event"
                                                   " logs.",
@@ -139,12 +137,9 @@ def parse_args(reduced_mode=False):
     parser.add_argument('--threaded', help='Run the instructor script in a separate thread to avoid'
                                            ' timeout crashes.',
                         default=False)
-    parser.add_argument('--openai-api-key', help="The OpenAI API key",
-                        default='')
     parser.add_argument('--log_level', help="Set the logging level for Pedal.",
                         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                         default="ERROR")
-
     '''
     parser.add_argument('--include_submissions', help='An optional REGEX filter '
                                                       'to only include certain submissions')

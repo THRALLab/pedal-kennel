@@ -529,7 +529,7 @@ class FeedbackGroup(Feedback):
 DEFAULT_CATEGORY_PRIORITY = [
     "highest",
     # Static
-    Feedback.CATEGORIES.GPT,
+    Feedback.CATEGORIES.PATTERNS,
     Feedback.CATEGORIES.SYNTAX,
     Feedback.CATEGORIES.MISTAKES,
     Feedback.CATEGORIES.INSTRUCTOR,

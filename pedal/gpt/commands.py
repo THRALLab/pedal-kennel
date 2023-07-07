@@ -8,24 +8,23 @@ from pedal.gpt.feedbacks import gpt_prompt_feedback
 
 try:
     import openai
+    # Will remain None if api key is not present
+    openai.api_key = os.getenv('OPENAI_API_KEY')
 except ImportError:
     openai = None
 
-__all__ = ['gpt_get_api_key', 'gpt_run_prompts']
-
-OPENAI_DEFAULT_MODEL = 'gpt-3.5-turbo-0613'  # 'gpt-4-0613'
-OPENAI_RETRY_COUNT = 3
+__all__ = ['set_openai_api_key', 'gpt_run_prompts']
 
 
-def gpt_get_api_key(default):
+def set_openai_api_key(key):
     """
-    Takes a fallback string and returns the API key, or the fallback
-    if the environment variable doesn't exist.
+    Sets the OpenAI api key.
 
     Args:
-        default (str): The fallback API key. Probably passed as a CLI arg
+        key (str): The API key
     """
-    return os.getenv("OPENAI_API_KEY", default=default)
+    if openai:
+        openai.api_key = key
 
 
 def run_prompt(model, messages, function, temperature=0.5, top_p=0.5):
@@ -39,15 +38,24 @@ def run_prompt(model, messages, function, temperature=0.5, top_p=0.5):
         temperature:
         top_p:
     Returns: A dictionary containing the values of the required arguments, or None if an error is encountered.
+             The report is unmodified.
     """
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        functions=[function],
-        function_call={'name': function['name']},
-        temperature=temperature,
-        top_p=top_p
-    )
+    if not openai:
+        return None
+    if not openai.api_key:
+        return None
+
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            functions=[function],
+            function_call={'name': function['name']},
+            temperature=temperature,
+            top_p=top_p
+        )
+    except openai.error.OpenAIError:
+        return None
 
     if len(response.choices) == 0 or 'function_call' not in response.choices[0]['message']:
         return None
@@ -61,22 +69,23 @@ def run_prompt(model, messages, function, temperature=0.5, top_p=0.5):
         return None
 
 
-def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_REPORT):
+def gpt_run_prompts(code=None, report=MAIN_REPORT, temp_debug_remove_me=False):
     """
     Evaluates the following prompts and attach the results to the Report.
 
     Args:
-        api_key (str): The OpenAI api key
         code (str or None): The student's code to evaluate. If ``code`` is not
             given, then it will default to the student's main file.
         report (:class:`pedal.core.report.Report`): The Report object to
             attach results to.
-        model (str): The gpt model to use
+        temp_debug_remove_me (bool): todo(gpt): remove debug prints
     """
     if not openai:
         system_error(TOOL_NAME, 'Could not load OpenAI library!', report=report)
         return
-    openai.api_key = api_key
+    if not openai.api_key:
+        system_error(TOOL_NAME, 'OpenAI API key has not been set!', report=report)
+        return
 
     if not code:
         code = report.submission.main_code
@@ -99,12 +108,12 @@ def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_
     tries = 0
     while not feedback_result:
         tries += 1
-        if tries > OPENAI_RETRY_COUNT:
+        if tries > report[TOOL_NAME]['retry_count']:
             system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
             return
 
         feedback_result = run_prompt(
-            model=model,
+            model=report[TOOL_NAME]['model'],
             messages=messages,
             function={
                 'name': 'add_code_feedback',
@@ -130,12 +139,12 @@ def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_
     tries = 0
     while not score_result:
         tries += 1
-        if tries > OPENAI_RETRY_COUNT:
+        if tries > report[TOOL_NAME]['retry_count']:
             system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
             return
 
         score_result = run_prompt(
-            model=model,
+            model=report[TOOL_NAME]['model'],
             messages=messages,
             function={
                 'name': 'add_code_feedback',
@@ -164,6 +173,7 @@ def gpt_run_prompts(api_key, code=None, model=OPENAI_DEFAULT_MODEL, report=MAIN_
             'error': score_result['error']
         })
 
-    print('Prompt:\n\n' + str(prompt))
-    print('\nFeedback result:\n\n' + str(feedback_result))
-    print('\nScore result:\n\n' + str(score_result))
+    if temp_debug_remove_me:
+        print('Prompt:\n\n' + str(prompt))
+        print('\nFeedback result:\n\n' + str(feedback_result))
+        print('\nScore result:\n\n' + str(score_result))

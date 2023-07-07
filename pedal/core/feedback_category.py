@@ -18,7 +18,7 @@ class FeedbackCategory:
     """
 
     #: AI-generated feedback
-    GPT = 'gpt'
+    PATTERNS = 'patterns'
     #: Grammatical and typographical errors that prevent parsing.
     SYNTAX = 'syntax'
     #: Execution errors triggered during runtime by an invalid Python operation

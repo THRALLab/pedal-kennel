@@ -18,10 +18,9 @@ class gpt_prompt_feedback(Feedback):
     kind = FeedbackKind.HINT
     justification = 'AI-Generated Feedback'
     title = 'AI-Generated Feedback'
-    priority = Feedback.CATEGORIES.GPT
+    priority = Feedback.CATEGORIES.PATTERNS
     tool = TOOL_NAME
-    valence = 0
-    score = 0
+    valence = -1  # todo(gpt): possibly look into asking if the feedback is positive or negative
 
     def __init__(self, instructions, **kwargs):
         super().__init__(message=instructions['feedback'], score=instructions['score'], **kwargs)
