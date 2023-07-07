@@ -1,3 +1,4 @@
+from pedal.core.feedback import Feedback
 from pedal.gpt.setup import reset
 from pedal.gpt.commands import set_openai_api_key, gpt_run_prompts
 
@@ -7,7 +8,7 @@ DESCRIPTION = '''
 '''
 REQUIRES = []
 OPTIONALS = []
-CATEGORY = "highest"
+CATEGORY = Feedback.CATEGORIES.PATTERNS
 
 __all__ = ['NAME', 'DESCRIPTION', 'SHORT_DESCRIPTION', 'REQUIRES', 'OPTIONALS',
            'set_openai_api_key', 'gpt_run_prompts']
