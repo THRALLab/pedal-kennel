@@ -1,5 +1,4 @@
 import json
-import os
 
 from pedal import system_error
 from pedal.core.report import MAIN_REPORT
@@ -8,26 +7,24 @@ from pedal.gpt.feedbacks import gpt_prompt_feedback
 
 try:
     import openai
-    # Will remain None if api key is not present
-    openai.api_key = os.getenv('OPENAI_API_KEY')
 except ImportError:
     openai = None
 
 __all__ = ['set_openai_api_key', 'gpt_run_prompts']
 
 
-def set_openai_api_key(key):
+def set_openai_api_key(key, report=MAIN_REPORT):
     """
-    Sets the OpenAI api key.
+    Sets the OpenAI api key in the tool data.
 
     Args:
         key (str): The API key
+        report:
     """
-    if openai:
-        openai.api_key = key
+    report[TOOL_NAME]['openai_api_key'] = key
 
 
-def run_prompt(model, messages, function, temperature=0.5, top_p=0.5):
+def run_prompt(model, messages, function, temperature=0.5, top_p=0.5, report=MAIN_REPORT):
     """
     Runs a prompt through OpenAI's api which calls a function, and parses the result.
 
@@ -37,11 +34,14 @@ def run_prompt(model, messages, function, temperature=0.5, top_p=0.5):
         function: The function to pass to the OpenAI api call
         temperature:
         top_p:
+        report:
     Returns: A dictionary containing the values of the required arguments, or None if an error is encountered.
              The report is unmodified.
     """
     if not openai:
         return None
+
+    openai.api_key = report[TOOL_NAME]['openai_api_key']
     if not openai.api_key:
         return None
 
@@ -59,6 +59,7 @@ def run_prompt(model, messages, function, temperature=0.5, top_p=0.5):
 
     if len(response.choices) == 0 or 'function_call' not in response.choices[0]['message']:
         return None
+
     try:
         args = json.loads(response.choices[0]['message']['function_call']['arguments'])
         for expected_arg in function['parameters']['required']:
@@ -133,7 +134,9 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT, temp_debug_remove_me=False):
                     'required': ['feedback', 'is_error_present']
                 }
             },
-            temperature=0.7)
+            temperature=0.7,
+            report=report
+        )
 
     score_result = None
     tries = 0
@@ -164,7 +167,9 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT, temp_debug_remove_me=False):
                     'required': ['score', 'error']
                 }
             },
-            temperature=0.1)
+            temperature=0.1,
+            report=report
+        )
 
     if feedback_result['is_error_present']:
         gpt_prompt_feedback({

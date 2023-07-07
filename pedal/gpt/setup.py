@@ -4,6 +4,7 @@ Initialize and setup the OpenAI tool.
 
 from pedal.core.report import MAIN_REPORT, Report
 from pedal.gpt.constants import TOOL_NAME
+import os
 
 
 def reset(report=MAIN_REPORT):
@@ -17,7 +18,8 @@ def reset(report=MAIN_REPORT):
         This tool's data
     """
     report[TOOL_NAME] = {
-        'model': 'gpt-3.5-turbo-0613',  # 'gpt-4-0613'
+        'openai_api_key': os.getenv('OPENAI_API_KEY'),  # Will be None if the env var doesn't exist
+        'model': 'gpt-3.5-turbo-0613',  # 'gpt-4-0613',
         'retry_count': 3
     }
     return report[TOOL_NAME]
