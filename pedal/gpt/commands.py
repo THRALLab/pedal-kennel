@@ -10,7 +10,7 @@ try:
 except ImportError:
     openai = None
 
-__all__ = ['set_openai_api_key', 'gpt_run_prompts']
+__all__ = ['set_openai_api_key', 'gpt_get_default_prompts', 'gpt_run_prompts']
 
 
 def set_openai_api_key(key, report=MAIN_REPORT):
@@ -24,7 +24,87 @@ def set_openai_api_key(key, report=MAIN_REPORT):
     report[TOOL_NAME]['openai_api_key'] = key
 
 
-def run_prompt(model, messages, function, temperature=0.5, top_p=0.5, report=MAIN_REPORT):
+def gpt_get_default_prompts(code=None, report=MAIN_REPORT):
+    """
+    Returns each prompt to run, as well as the processing function that generates feedback
+    from the results. If there is an error at any point, the processing function is never called.
+
+    Args:
+        code (str or None): The student's code to evaluate. If ``code`` is not
+            given, then it will default to the student's main file.
+        report (:class:`pedal.core.report.Report`): The Report object to
+            attach results to.
+    """
+    shared_messages = [
+        {
+            'role': 'system',
+            'content': "You are an intelligent tutor for a introductory computer science course in Python. " +
+                       "You never give answers but do give helpful tips to guide students with their code."
+        },
+        {
+            'role': 'user',
+            'content': code
+        }
+    ]
+    feedback_function = {
+        'name': 'add_code_feedback',
+        'description': 'Adds feedback on the code for the student to view.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'feedback': {
+                    'type': 'string',
+                    'description': 'Helpful tips to guide a student with their problematic code.'
+                },
+                'is_error_present': {
+                    'type': 'boolean',
+                    'description': 'If there is a problem with the code, this parameter is true.'
+                }
+            },
+            'required': ['feedback', 'is_error_present']
+        }
+    }
+    score_function = {
+        'name': 'add_code_feedback',
+        'description': 'Adds feedback on the code for the student to view.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'score': {
+                    'type': 'string',
+                    'description': 'On a scale from 0 to 10, what would you score their code?'
+                },
+                'error': {
+                    'type': 'string',
+                    'description': 'List all the error types the code produces.'
+                }
+            },
+            'required': ['score', 'error']
+        }
+    }
+
+    prompts = {
+        'feedback': (shared_messages, feedback_function, 0.7, 0.5),
+        'score': (shared_messages, score_function, 0.1, 0.5)
+    }
+
+    def process_prompts(results):
+        if results['feedback']['is_error_present']:
+            gpt_prompt_feedback({
+                'feedback': results['feedback']['feedback'],
+                'score': results['score']['score'],
+                'error': results['score']['error']
+            })
+
+        # Debug code
+        print('Feedback result:\n' + str(results['feedback']))
+        print('Score result:\n' + str(results['score']))
+        print()
+
+    return prompts, process_prompts
+
+
+def run_prompt(model, messages, function, temperature, top_p, report=MAIN_REPORT):
     """
     Runs a prompt through OpenAI's api which calls a function, and parses the result.
 
@@ -34,7 +114,7 @@ def run_prompt(model, messages, function, temperature=0.5, top_p=0.5, report=MAI
         function: The function to pass to the OpenAI api call
         temperature:
         top_p:
-        report:
+        report (:class:`pedal.core.report.Report`): The Report object to read the OpenAI API key from.
     Returns: A dictionary containing the values of the required arguments, or None if an error is encountered.
              The report is unmodified.
     """
@@ -70,16 +150,15 @@ def run_prompt(model, messages, function, temperature=0.5, top_p=0.5, report=MAI
         return None
 
 
-def gpt_run_prompts(code=None, report=MAIN_REPORT, temp_debug_remove_me=False):
+def gpt_run_prompts(code=None, report=MAIN_REPORT):
     """
-    Evaluates the following prompts and attach the results to the Report.
+    Evaluates the prompts stored in tool data and attach the results to the Report.
 
     Args:
         code (str or None): The student's code to evaluate. If ``code`` is not
             given, then it will default to the student's main file.
         report (:class:`pedal.core.report.Report`): The Report object to
             attach results to.
-        temp_debug_remove_me (bool): todo(gpt): remove debug prints
     """
     if not openai:
         system_error(TOOL_NAME, 'Could not load OpenAI library!', report=report)
@@ -91,94 +170,38 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT, temp_debug_remove_me=False):
     if not code:
         code = report.submission.main_code
 
-    prompt = f"""{code}"""
+    prompts, process_prompts = report[TOOL_NAME]['prompts_getter'](code, report=report)
+    results = {}
 
-    messages = [
-        {
-            'role': 'system',
-            'content': "You are an intelligent tutor for a introductory computer science course in Python. " +
-                       "You never give answers but do give helpful tips guide students with their code."
-        },
-        {
-            'role': 'user',
-            'content': prompt
-        }
-    ]
+    for prompt in prompts:
+        prompt_data = prompts[prompt]
 
-    feedback_result = None
-    tries = 0
-    while not feedback_result:
-        tries += 1
-        if tries > report[TOOL_NAME]['retry_count']:
-            system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
-            return
+        result = None
+        tries = 0
+        while not result:
+            tries += 1
+            if tries > report[TOOL_NAME]['retry_count']:
+                system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
+                return
 
-        feedback_result = run_prompt(
-            model=report[TOOL_NAME]['model'],
-            messages=messages,
-            function={
-                'name': 'add_code_feedback',
-                'description': 'Adds feedback on the code for the student to view.',
-                'parameters': {
-                    'type': 'object',
-                    'properties': {
-                        'feedback': {
-                            'type': 'string',
-                            'description': 'Helpful tips to guide a student with their problematic code.'
-                        },
-                        'is_error_present': {
-                            'type': 'boolean',
-                            'description': 'If there is a problem with the code, this parameter is true.'
-                        }
-                    },
-                    'required': ['feedback', 'is_error_present']
-                }
-            },
-            temperature=0.7,
-            report=report
-        )
+            result = run_prompt(
+                model=report[TOOL_NAME]['model'],
+                messages=prompt_data[0],
+                function=prompt_data[1],
+                temperature=prompt_data[2],
+                top_p=prompt_data[3],
+                report=report
+            )
 
-    score_result = None
-    tries = 0
-    while not score_result:
-        tries += 1
-        if tries > report[TOOL_NAME]['retry_count']:
-            system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
-            return
+        results[prompt] = result
 
-        score_result = run_prompt(
-            model=report[TOOL_NAME]['model'],
-            messages=messages,
-            function={
-                'name': 'add_code_feedback',
-                'description': 'Adds feedback on the code for the student to view.',
-                'parameters': {
-                    'type': 'object',
-                    'properties': {
-                        'score': {
-                            'type': 'string',
-                            'description': 'On a scale from 0 to 10, what would you score their code?'
-                        },
-                        'error': {
-                            'type': 'string',
-                            'description': 'List all the error types the code produces.'
-                        }
-                    },
-                    'required': ['score', 'error']
-                }
-            },
-            temperature=0.1,
-            report=report
-        )
+        # Debug code
+        print('PROMPT: ' + prompt)
+        print('------')
+        print('Messages:\n' + str(prompt_data[0]))
+        print('Function:\n' + str(prompt_data[1]))
+        print('Temperature: ' + str(prompt_data[2]))
+        print('Top P: ' + str(prompt_data[3]))
+        print()
 
-    if feedback_result['is_error_present']:
-        gpt_prompt_feedback({
-            'feedback': feedback_result['feedback'],
-            'score': score_result['score'],
-            'error': score_result['error']
-        })
-
-    if temp_debug_remove_me:
-        print('Prompt:\n\n' + str(prompt))
-        print('\nFeedback result:\n\n' + str(feedback_result))
-        print('\nScore result:\n\n' + str(score_result))
+    process_prompts(results)
