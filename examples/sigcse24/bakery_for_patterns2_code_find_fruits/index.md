@@ -1,0 +1,1 @@
+Use the Find pattern to define the function `find_fruit` that consumes a list of strings representing foods, and produces a string value that represents the last fruit in the list. For our purposes, the only fruits are `"apple"`, `"banana"`, and `"orange"`. If there is no fruit found in the list, then you should return `"fruitless"`.

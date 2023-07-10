@@ -1,0 +1,1 @@
+Use a list to represent the courses you are taking by the number of credits they are worth. For instance, this course is worth <code>3</code> credits, so your list will have at least one number in it. Then, print out each credit value using a <code>for</code> loop.

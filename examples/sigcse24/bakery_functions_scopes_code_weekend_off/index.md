@@ -1,0 +1,1 @@
+The function <code>cut_day</code>&nbsp;is supposed to consume a string representing the current day of the week, and then produce the current day without the <code>"day"</code> part at the end (e.g., <code>"Thursday"</code> becomes <code>"Thurs"</code>). However, it does not work correctly. Fix this function by applying the rules of scope.

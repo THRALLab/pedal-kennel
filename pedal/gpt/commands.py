@@ -105,6 +105,7 @@ def gpt_get_default_prompts(code=None, report=MAIN_REPORT):
 
 
 def run_prompt(model, messages, function, temperature, top_p, report=MAIN_REPORT):
+
     """
     Runs a prompt through OpenAI's api which calls a function, and parses the result.
 
@@ -168,7 +169,7 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         return
 
     if not code:
-        code = report.submission.main_code
+        code = report.submission.main_code #what if no code in file + no main code?
 
     prompts, process_prompts = report[TOOL_NAME]['prompts_getter'](code, report=report)
     results = {}
@@ -203,5 +204,7 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         print('Temperature: ' + str(prompt_data[2]))
         print('Top P: ' + str(prompt_data[3]))
         print()
+
+        return results
 
     process_prompts(results)

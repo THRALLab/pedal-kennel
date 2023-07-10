@@ -1,0 +1,1 @@
+Create a function named `average` that consumes a list of numbers and returns their average by combining the results of the given `summate` and `count` function. If the list is empty, produce the special value `None`.
