@@ -105,7 +105,6 @@ def gpt_get_default_prompts(code=None, report=MAIN_REPORT):
 
 
 def run_prompt(model, messages, function, temperature, top_p, report=MAIN_REPORT):
-
     """
     Runs a prompt through OpenAI's api which calls a function, and parses the result.
 
