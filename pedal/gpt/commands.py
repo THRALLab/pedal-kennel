@@ -204,6 +204,4 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         print('Top P: ' + str(prompt_data[3]))
         print()
 
-        return results
-
     process_prompts(results)
