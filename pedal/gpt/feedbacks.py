@@ -14,7 +14,7 @@ class gpt_prompt_feedback(Feedback):
         instructions:
     """
 
-    category = FeedbackCategory.INSTRUCTOR
+    category = FeedbackCategory.PATTERNS
     kind = FeedbackKind.HINT
     justification = 'AI-Generated Feedback'
     title = 'AI-Generated Feedback'

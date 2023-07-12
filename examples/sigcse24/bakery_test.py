@@ -15,17 +15,17 @@ args = arg_parser.parse_args()
 
 @dataclass
 class SubmissionBlock:
-    # student = ''  # @acbart
+    # student = ''  # isn't this covered by the filename?
     # gpt_prompt = ''
     # gpt_prompt_length = -1
     gpt_feedback = ''
     gpt_feedback_length = ''
-    # gpt_feedback_word_probability = -1  # ???
+    # gpt_feedback_word_probability = -1
     gpt_score = -1
-    # gpt_error_type = ''  # ???
+    # gpt_error_type = ''
     # gpt_version = ''
     pedal_feedback = ''
-    pedal_feedback_length = -1  # word count
+    pedal_feedback_length = -1
     # pedal_feedback_word_probability = -1
     pedal_score = -1
     rubric_fields = None
@@ -74,8 +74,8 @@ class SubmissionPipeline(AbstractPipeline):
         found_gpt_feedback = False
         for bundle in self.submissions:
             if not found_feedback and bundle.result.resolution.category != FeedbackCategory.PATTERNS:
-                self.current_submission.pedal_feedback = bundle.result.output.strip()
-                self.current_submission.pedal_feedback_length = len(bundle.result.resolution.message.strip().split(' '))
+                self.current_submission.pedal_feedback = bundle.result.resolution.message.strip()
+                self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
                 self.current_submission.pedal_score = bundle.result.resolution.score
                 found_feedback = True
             if not found_gpt_feedback and bundle.result.resolution.category == FeedbackCategory.PATTERNS:

@@ -168,7 +168,7 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         return
 
     if not code:
-        code = report.submission.main_code #what if no code in file + no main code?
+        code = report.submission.main_code  # what if no code in file + no main code?
 
     prompts, process_prompts = report[TOOL_NAME]['prompts_getter'](code, report=report)
     results = {}
