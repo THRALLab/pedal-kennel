@@ -1,13 +1,16 @@
 import argparse
+import json
 import os
 from configparser import ConfigParser
 from dataclasses import dataclass
 
+from pedal import MAIN_REPORT
 from pedal.command_line.modes import AbstractPipeline
 from pedal.core.feedback_category import FeedbackCategory
+from pedal.gpt.constants import TOOL_NAME as GPT_TOOL_NAME
 
 arg_parser = argparse.ArgumentParser(description='Run student code through Pedal and store the feedback.')
-arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=1)
+arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=0)
 arg_parser.add_argument('-i', '--instructor', type=str, action='store', default='Instructor')
 
 args = arg_parser.parse_args()
@@ -16,14 +19,11 @@ args = arg_parser.parse_args()
 @dataclass
 class SubmissionBlock:
     # student = ''  # isn't this covered by the filename?
-    # gpt_prompt = ''
-    # gpt_prompt_length = -1
     gpt_feedback = ''
     gpt_feedback_length = ''
     # gpt_feedback_word_probability = -1
+    gpt_error_type = ''
     gpt_score = -1
-    # gpt_error_type = ''
-    # gpt_version = ''
     pedal_feedback = ''
     pedal_feedback_length = -1
     # pedal_feedback_word_probability = -1
@@ -35,6 +35,7 @@ class SubmissionBlock:
         cfg[f'{assignment}.{filename}'] = {
             'gpt_feedback':          self.gpt_feedback,
             'gpt_feedback_length':   self.gpt_feedback_length,
+            'gpt_error_type':        self.gpt_error_type,
             'gpt_score':             self.gpt_score,
             'pedal_feedback':        self.pedal_feedback,
             'pedal_feedback_length': self.pedal_feedback_length,
@@ -95,13 +96,15 @@ for directory in os.listdir(os.getcwd()):
     if not os.path.isdir(directory):
         continue
 
-    if num_submissions_processed > args.max_submissions:
+    if 0 < args.max_submissions < num_submissions_processed:
         break
 
     assignment = AssignmentBlock()
     assignment.assignment = directory
     with open(f'{directory}/index.md') as description:
         assignment.description = description.read().strip()
+
+    print(f'Processing assignment {directory}')
 
     path = f'{directory}/submissions/'
     for file in os.listdir(path):
@@ -110,8 +113,10 @@ for directory in os.listdir(os.getcwd()):
             continue
 
         num_submissions_processed += 1
-        if num_submissions_processed > args.max_submissions:
+        if 0 < args.max_submissions < num_submissions_processed:
             break
+
+        print(f'- Processing submission {file}')
 
         submission = SubmissionBlock()
 
@@ -136,13 +141,19 @@ for directory in os.listdir(os.getcwd()):
 
 # write results to file
 with open('feedback_results.ini', 'w') as out_file:
+    prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('**STUDENT CODE HERE**'), indent=2, default=str)
+
     out = ConfigParser(allow_no_value=True, interpolation=None)
     out['global'] = {
         'instructor': args.instructor,
-        'tester': os.getlogin()
+        'tester': os.getlogin(),
+        'gpt_model': MAIN_REPORT[GPT_TOOL_NAME]['model'],
+        'gpt_prompt': prompt,
+        'gpt_prompt_approximate_length': len(prompt.split(' '))
     }
 
     for assignment in assignments:
         assignment.add_to_output(out)
 
     out.write(out_file)
+    print('Results written to file!')
