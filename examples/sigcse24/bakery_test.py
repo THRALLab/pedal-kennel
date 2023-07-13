@@ -74,6 +74,7 @@ class SubmissionPipeline(AbstractPipeline):
         found_feedback = False
         found_gpt_feedback = False
         for bundle in self.submissions:
+            print(bundle.result.resolution.category)
             if not found_feedback and bundle.result.resolution.category != FeedbackCategory.PATTERNS:
                 self.current_submission.pedal_feedback = bundle.result.resolution.message.strip()
                 self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
@@ -82,6 +83,7 @@ class SubmissionPipeline(AbstractPipeline):
             if not found_gpt_feedback and bundle.result.resolution.category == FeedbackCategory.PATTERNS:
                 self.current_submission.gpt_feedback = bundle.result.resolution.message.strip()
                 self.current_submission.gpt_feedback_length = len(self.current_submission.gpt_feedback.split(' '))
+                # self.current_submission.gpt_error_type = bundle.result.resolution
                 self.current_submission.gpt_score = bundle.result.resolution.score
                 found_gpt_feedback = True
             if found_feedback and found_gpt_feedback:
@@ -95,9 +97,6 @@ assignments = []
 for directory in os.listdir(os.getcwd()):
     if not os.path.isdir(directory):
         continue
-
-    if 0 < args.max_submissions < num_submissions_processed:
-        break
 
     assignment = AssignmentBlock()
     assignment.assignment = directory
@@ -120,7 +119,7 @@ for directory in os.listdir(os.getcwd()):
 
         submission = SubmissionBlock()
 
-        pipeline_settings = {
+        pipeline = SubmissionPipeline(submission, {
             'instructor': 'instructor.py',
             'submissions': path,
             'environment': 'blockpy',
@@ -130,12 +129,13 @@ for directory in os.listdir(os.getcwd()):
             'threaded': False,
             'alternate_filenames': False,
             'ics_direct': False
-        }
-
-        pipeline = SubmissionPipeline(submission, pipeline_settings)
+        })
         pipeline.execute()
 
         assignment.add_submission(file, submission)
+
+    if 0 < args.max_submissions < num_submissions_processed:
+        break
 
     assignments.append(assignment)
 
