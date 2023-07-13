@@ -1,4 +1,5 @@
 import json
+import time
 
 from pedal import system_error
 from pedal.core.report import MAIN_REPORT
@@ -134,6 +135,10 @@ def run_prompt(model, messages, function, temperature, top_p, report=MAIN_REPORT
             temperature=temperature,
             top_p=top_p
         )
+    except openai.error.RateLimitError:
+        # todo: report this somewhere
+        time.sleep(22)  # yikes, need to make this configurable or optionally ignore this error
+        return run_prompt(model, messages, function, temperature, top_p, report)
     except openai.error.OpenAIError:
         return None
 

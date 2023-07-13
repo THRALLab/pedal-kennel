@@ -74,20 +74,22 @@ class SubmissionPipeline(AbstractPipeline):
         found_feedback = False
         found_gpt_feedback = False
         for bundle in self.submissions:
-            print(bundle.result.resolution.category)
-            if not found_feedback and bundle.result.resolution.category != FeedbackCategory.PATTERNS:
-                self.current_submission.pedal_feedback = bundle.result.resolution.message.strip()
-                self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
-                self.current_submission.pedal_score = bundle.result.resolution.score
-                found_feedback = True
-            if not found_gpt_feedback and bundle.result.resolution.category == FeedbackCategory.PATTERNS:
-                self.current_submission.gpt_feedback = bundle.result.resolution.message.strip()
-                self.current_submission.gpt_feedback_length = len(self.current_submission.gpt_feedback.split(' '))
-                # self.current_submission.gpt_error_type = bundle.result.resolution
-                self.current_submission.gpt_score = bundle.result.resolution.score
-                found_gpt_feedback = True
-            if found_feedback and found_gpt_feedback:
-                break
+            if len(bundle.result.resolution.used) == 0:
+                continue
+            for feedback in bundle.result.resolution.used[0].report.feedback:
+                if not found_feedback and feedback.category != FeedbackCategory.PATTERNS:
+                    self.current_submission.pedal_feedback = feedback.message.strip()
+                    self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
+                    self.current_submission.pedal_score = bundle.result.resolution.score
+                    found_feedback = True
+                if not found_gpt_feedback and feedback.category == FeedbackCategory.PATTERNS:
+                    self.current_submission.gpt_feedback = feedback.message.strip()
+                    self.current_submission.gpt_feedback_length = len(self.current_submission.gpt_feedback.split(' '))
+                    # self.current_submission.gpt_error_type = bundle.result.resolution
+                    self.current_submission.gpt_score = feedback.score
+                    found_gpt_feedback = True
+                if found_feedback and found_gpt_feedback:
+                    break
 
 
 # read in all student programs
@@ -121,7 +123,7 @@ for directory in os.listdir(os.getcwd()):
 
         pipeline = SubmissionPipeline(submission, {
             'instructor': 'instructor.py',
-            'submissions': path,
+            'submissions': filepath,
             'environment': 'blockpy',
             'resolver': 'resolve',
             'skip_tifa': False,
@@ -134,10 +136,10 @@ for directory in os.listdir(os.getcwd()):
 
         assignment.add_submission(file, submission)
 
+    assignments.append(assignment)
+
     if 0 < args.max_submissions < num_submissions_processed:
         break
-
-    assignments.append(assignment)
 
 # write results to file
 with open('feedback_results.ini', 'w') as out_file:
