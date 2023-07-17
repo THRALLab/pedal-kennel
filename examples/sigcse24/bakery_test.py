@@ -70,6 +70,13 @@ class SubmissionPipeline(AbstractPipeline):
         self.current_submission = current_submission
         with open(self.config.submissions) as student_code:
             self.current_submission.student_code = '\n' + student_code.read().strip()
+    
+    def run_control_scripts(self):
+        for bundle in self.submissions:
+            bundle.run_ics_bundle(resolver=self.config.resolver,
+                                  skip_tifa=self.config.skip_tifa,
+                                  skip_run=self.config.skip_run)
+            bundle.result.feedback = list(MAIN_REPORT.feedback)
 
     def process_output(self):
         if len(self.submissions) == 0:
@@ -80,7 +87,7 @@ class SubmissionPipeline(AbstractPipeline):
         for bundle in self.submissions:
             if len(bundle.result.resolution.used) == 0:
                 continue
-            for feedback in bundle.result.resolution.used[0].report.feedback:
+            for feedback in bundle.result.feedback:
                 if not found_feedback and feedback.category != FeedbackCategory.PATTERNS:
                     self.current_submission.pedal_feedback = feedback.message.strip()
                     self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
