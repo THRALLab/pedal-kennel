@@ -104,7 +104,7 @@ class SubmissionPipeline(AbstractPipeline):
                     break
             if not found_feedback or not found_gpt_feedback:
                 print(
-                    f"  - Didn't find feedback! Feedbacks: {[feedback.category for feedback in bundle.result.resolution.used[0].report.feedback]}")
+                    f"  - Didn't find feedback! Feedbacks: {[feedback.category for feedback in bundle.result.feedback]}")
 
 
 # read in all student programs
@@ -137,7 +137,7 @@ for directory in os.listdir(os.getcwd()):
         submission = SubmissionBlock()
 
         pipeline = SubmissionPipeline(submission, {
-            'instructor': 'instructor.py',
+            'instructor': f'{directory}/on_run.py',
             'submissions': filepath,
             'environment': 'blockpy',
             'resolver': 'resolve',
