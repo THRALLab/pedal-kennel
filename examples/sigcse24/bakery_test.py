@@ -10,7 +10,7 @@ from pedal.core.feedback_category import FeedbackCategory
 from pedal.gpt.constants import TOOL_NAME as GPT_TOOL_NAME
 
 arg_parser = argparse.ArgumentParser(description='Run student code through Pedal and store the feedback.')
-arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=0)
+arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=6)
 arg_parser.add_argument('-i', '--instructor', type=str, action='store', default='Instructor')
 
 args = arg_parser.parse_args()
@@ -70,7 +70,7 @@ class SubmissionPipeline(AbstractPipeline):
         self.current_submission = current_submission
         with open(self.config.submissions) as student_code:
             self.current_submission.student_code = '\n' + student_code.read().strip()
-    
+
     def run_control_scripts(self):
         for bundle in self.submissions:
             bundle.run_ics_bundle(resolver=self.config.resolver,
@@ -90,7 +90,8 @@ class SubmissionPipeline(AbstractPipeline):
             for feedback in bundle.result.feedback:
                 if not found_feedback and feedback.category != FeedbackCategory.PATTERNS:
                     self.current_submission.pedal_feedback = feedback.message.strip()
-                    self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
+                    self.current_submission.pedal_feedback_length = len(
+                        self.current_submission.pedal_feedback.split(' '))
                     self.current_submission.pedal_score = bundle.result.resolution.score
                     found_feedback = True
                 if not found_gpt_feedback and feedback.category == FeedbackCategory.PATTERNS:
@@ -102,7 +103,8 @@ class SubmissionPipeline(AbstractPipeline):
                 if found_feedback and found_gpt_feedback:
                     break
             if not found_feedback or not found_gpt_feedback:
-                print(f"  - Didn't find feedback! Feedbacks: {[feedback.category for feedback in bundle.result.resolution.used[0].report.feedback]}")
+                print(
+                    f"  - Didn't find feedback! Feedbacks: {[feedback.category for feedback in bundle.result.resolution.used[0].report.feedback]}")
 
 
 # read in all student programs
@@ -146,6 +148,19 @@ for directory in os.listdir(os.getcwd()):
             'ics_direct': False
         })
         pipeline.execute()
+
+        pipeline_gpt = SubmissionPipeline(submission, {
+            'instructor': 'instructor_gpt.py',
+            'submissions': filepath,
+            'environment': 'blockpy',
+            'resolver': 'resolve',
+            'skip_tifa': False,
+            'skip_run': False,
+            'threaded': False,
+            'alternate_filenames': False,
+            'ics_direct': False
+        })
+        pipeline_gpt.execute()
 
         assignment.add_submission(file, submission)
 
