@@ -19,6 +19,7 @@ args = arg_parser.parse_args()
 @dataclass
 class SubmissionBlock:
     # student = ''  # isn't this covered by the filename?
+    student_code = ''
     gpt_feedback = ''
     gpt_feedback_length = ''
     # gpt_feedback_word_probability = -1
@@ -33,6 +34,7 @@ class SubmissionBlock:
 
     def add_to_output(self, assignment: str, filename: str, cfg: ConfigParser) -> None:
         cfg[f'{assignment}.{filename}'] = {
+            'student_code':          self.student_code,
             'gpt_feedback':          self.gpt_feedback,
             'gpt_feedback_length':   self.gpt_feedback_length,
             'gpt_error_type':        self.gpt_error_type,
@@ -66,6 +68,8 @@ class SubmissionPipeline(AbstractPipeline):
     def __init__(self, current_submission: SubmissionBlock, config):
         super().__init__(config)
         self.current_submission = current_submission
+        with open(self.config.submissions) as student_code:
+            self.current_submission.student_code = '\n' + student_code.read().strip()
 
     def process_output(self):
         if len(self.submissions) == 0:
@@ -90,6 +94,8 @@ class SubmissionPipeline(AbstractPipeline):
                     found_gpt_feedback = True
                 if found_feedback and found_gpt_feedback:
                     break
+            if not found_feedback or not found_gpt_feedback:
+                print(f"  - Didn't find feedback! Feedbacks: {[feedback.category for feedback in bundle.result.resolution.used[0].report.feedback]}")
 
 
 # read in all student programs
@@ -143,7 +149,7 @@ for directory in os.listdir(os.getcwd()):
 
 # write results to file
 with open('feedback_results.ini', 'w') as out_file:
-    prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('**STUDENT CODE HERE**'), indent=2, default=str)
+    prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('{{STUDENT_CODE_HERE}}'), indent=2, default=str)
 
     out = ConfigParser(allow_no_value=True, interpolation=None)
     out['global'] = {

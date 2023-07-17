@@ -90,12 +90,12 @@ def gpt_get_default_prompts(code=None, report=MAIN_REPORT):
     }
 
     def process_prompts(results):
-        if results['feedback']['is_error_present']:
-            gpt_prompt_feedback({
-                'feedback': results['feedback']['feedback'],
-                'score': results['score']['score'],
-                'error': results['score']['error']
-            })
+        #if results['feedback']['is_error_present']:
+        gpt_prompt_feedback({
+            'feedback': results['feedback']['feedback'],
+            'score': results['score']['score'],
+            'error': results['score']['error']
+        })
 
         # Debug code
         print('Feedback result:\n' + str(results['feedback']))
@@ -137,9 +137,9 @@ def run_prompt(model, messages, function, temperature, top_p, report=MAIN_REPORT
         )
     except openai.error.RateLimitError:
         # todo: report this somewhere
-        time.sleep(22)  # yikes, need to make this configurable or optionally ignore this error
+        time.sleep(21)  # yikes, need to make this configurable or optionally ignore this error
         return run_prompt(model, messages, function, temperature, top_p, report)
-    except openai.error.OpenAIError:
+    except openai.error.OpenAIError as e:
         return None
 
     if len(response.choices) == 0 or 'function_call' not in response.choices[0]['message']:
