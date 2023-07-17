@@ -72,6 +72,7 @@ class SubmissionPipeline(AbstractPipeline):
             self.current_submission.student_code = '\n' + student_code.read().strip()
 
     def run_control_scripts(self):
+        self.submissions[0].script += '\nfrom pedal.gpt import gpt_run_prompts\ngpt_run_prompts()'
         for bundle in self.submissions:
             bundle.run_ics_bundle(resolver=self.config.resolver,
                                   skip_tifa=self.config.skip_tifa,
@@ -148,19 +149,6 @@ for directory in os.listdir(os.getcwd()):
             'ics_direct': False
         })
         pipeline.execute()
-
-        pipeline_gpt = SubmissionPipeline(submission, {
-            'instructor': 'instructor_gpt.py',
-            'submissions': filepath,
-            'environment': 'blockpy',
-            'resolver': 'resolve',
-            'skip_tifa': False,
-            'skip_run': False,
-            'threaded': False,
-            'alternate_filenames': False,
-            'ics_direct': False
-        })
-        pipeline_gpt.execute()
 
         assignment.add_submission(file, submission)
 

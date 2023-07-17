@@ -1,2 +1,0 @@
-from pedal import *
-verify()

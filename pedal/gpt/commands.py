@@ -165,8 +165,8 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         report (:class:`pedal.core.report.Report`): The Report object to
             attach results to.
     """
-    gpt_prompt_feedback({'feedback': "HEllo", "score": "7"})
-    return
+    #gpt_prompt_feedback({'feedback': "HEllo", "score": "7"})
+    #return
 
     if not openai:
         system_error(TOOL_NAME, 'Could not load OpenAI library!', report=report)
@@ -192,14 +192,14 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
                 system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
                 return
 
-            #result = run_prompt(
-            #    model=report[TOOL_NAME]['model'],
-            #    messages=prompt_data[0],
-            #    function=prompt_data[1],
-            #    temperature=prompt_data[2],
-            #    top_p=prompt_data[3],
-            #    report=report
-            #)
+            result = run_prompt(
+                model=report[TOOL_NAME]['model'],
+                messages=prompt_data[0],
+                function=prompt_data[1],
+                temperature=prompt_data[2],
+                top_p=prompt_data[3],
+                report=report
+            )
 
         results[prompt] = result
 
