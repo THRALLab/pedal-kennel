@@ -15,7 +15,7 @@ from pedal.gpt.constants import TOOL_NAME as GPT_TOOL_NAME
 from pedal.utilities.files import find_possible_filenames, normalize_path
 
 arg_parser = argparse.ArgumentParser(description='Run student code through Pedal and store the feedback.')
-arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=2)
+arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=0)
 arg_parser.add_argument('-i', '--instructor', type=str, action='store', default='Instructor')
 
 args = arg_parser.parse_args()
