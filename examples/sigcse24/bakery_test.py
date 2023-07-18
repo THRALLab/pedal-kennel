@@ -200,20 +200,23 @@ class SubmissionPipeline(AbstractPipeline):
                                   skip_run=self.config.skip_run)
 
     def process_output(self):
-        if len(self.submissions) == 0:
+        if len(self.submissions) != 1:
             return  # should never happen
 
-        for bundle in self.submissions:
-            if bundle.result.resolution:
-                self.current_submission.pedal_feedback = bundle.result.resolution.message.strip()
-                self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
-                self.current_submission.pedal_score = bundle.result.resolution.score
+        bundle = self.submissions[0]
 
-            if bundle.gpt_feedback:
-                self.current_submission.gpt_feedback = bundle.gpt_feedback.message.strip()
-                self.current_submission.gpt_feedback_length = len(self.current_submission.gpt_feedback.split(' '))
-                # self.current_submission.gpt_error_type = bundle.result.resolution
-                self.current_submission.gpt_score = bundle.gpt_feedback.score
+        if bundle.result.resolution:
+            self.current_submission.pedal_feedback = bundle.result.resolution.message.strip()
+            self.current_submission.pedal_feedback_length = len(self.current_submission.pedal_feedback.split(' '))
+            self.current_submission.pedal_score = bundle.result.resolution.score
+
+        if bundle.gpt_feedback:
+            self.current_submission.gpt_feedback = bundle.gpt_feedback.message.strip()
+            self.current_submission.gpt_feedback_length = len(self.current_submission.gpt_feedback.split(' '))
+            # self.current_submission.gpt_error_type = bundle.result.resolution
+            self.current_submission.gpt_score = bundle.gpt_feedback.score
+        else:
+            print('HEY IDIOT IT BROKE')
 
 
 # read in all student programs
