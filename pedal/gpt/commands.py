@@ -165,15 +165,10 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         report (:class:`pedal.core.report.Report`): The Report object to
             attach results to.
     """
-    #gpt_prompt_feedback({'feedback': "HEllo", "score": "7"})
-    #return
-
     if not openai:
-        system_error(TOOL_NAME, 'Could not load OpenAI library!', report=report)
-        return
+        raise ImportError('Could not load OpenAI library!')
     if not openai.api_key:
-        system_error(TOOL_NAME, 'OpenAI API key has not been set!', report=report)
-        return
+        raise openai.OpenAIError('OpenAI API key has not been set!')
 
     if not code:
         code = report.submission.main_code  # what if no code in file + no main code?
@@ -189,8 +184,7 @@ def gpt_run_prompts(code=None, report=MAIN_REPORT):
         while not result:
             tries += 1
             if tries > report[TOOL_NAME]['retry_count']:
-                system_error(TOOL_NAME, 'Failed to retrieve valid response from OpenAI!', report=report)
-                return
+                raise openai.OpenAIError('Failed to retrieve valid response from OpenAI!')
 
             result = run_prompt(
                 model=report[TOOL_NAME]['model'],

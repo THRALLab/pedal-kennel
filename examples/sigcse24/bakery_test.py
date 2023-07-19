@@ -197,8 +197,8 @@ class SubmissionPipeline(AbstractPipeline):
             return load_error
 
     def run_control_scripts(self):
-        self.submissions[0].script += '\nfrom pedal.gpt import gpt_run_prompts\ngpt_run_prompts()'
         for bundle in self.submissions:
+            bundle.script += '\nfrom pedal.gpt import gpt_run_prompts\ngpt_run_prompts()'
             bundle.run_ics_bundle(resolver=self.config.resolver,
                                   skip_tifa=self.config.skip_tifa,
                                   skip_run=self.config.skip_run)
