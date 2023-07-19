@@ -56,7 +56,11 @@ class SubmissionBlock:
 class AssignmentBlock:
     assignment = ''  # directory
     description = ''  # index.md
-    student_submissions = {}
+    student_submissions = None
+
+    def __init__(self):
+        if self.student_submissions is None:
+            self.student_submissions = {}
 
     def add_submission(self, filename: str, submission: SubmissionBlock):
         self.student_submissions[filename] = submission
@@ -216,14 +220,15 @@ class SubmissionPipeline(AbstractPipeline):
             # self.current_submission.gpt_error_type = bundle.result.resolution
             self.current_submission.gpt_score = bundle.gpt_feedback.score
         else:
-            print('HEY IDIOT IT BROKE')
+            print('No GPT response for this submission!')
 
 
 # read in all student programs
 num_submissions_processed = 0
 assignments = []
+script_parent_dir = os.path.dirname(os.path.realpath(__file__))
 
-for directory in os.listdir(os.getcwd()):
+for directory in os.listdir(script_parent_dir):
     if not os.path.isdir(directory):
         continue
 
@@ -234,7 +239,7 @@ for directory in os.listdir(os.getcwd()):
 
     print(f'Processing assignment {directory}')
 
-    path = f'{directory}/submissions/'
+    path = f'{script_parent_dir}/{directory}/submissions/'
     for file in os.listdir(path):
         filepath = path + file
         if not file.endswith('.py') or os.stat(filepath).st_size == 0:
