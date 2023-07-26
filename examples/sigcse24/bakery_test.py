@@ -277,7 +277,7 @@ for directory in os.listdir(script_parent_dir):
 with open('feedback_results.ini', 'w') as out_file:
     prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('{{STUDENT_CODE_HERE}}'), indent=2, default=str)
 
-    out = ConfigParser(allow_no_value=True, interpolation=None)
+    out = ConfigParser(allow_no_value=True, interpolation=None, comment_prefixes=(';',))
     out['global'] = {
         'instructor': args.instructor,
         'tester': os.getlogin(),

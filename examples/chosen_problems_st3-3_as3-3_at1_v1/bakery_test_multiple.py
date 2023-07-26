@@ -350,7 +350,7 @@ for gpt_model in gpt_models:
                 with open(f'{script_parent_dir}/_feedback_results/{gpt_model}-temp-{temp}-top_p-{top_p}-{trial}.ini', 'w') as out_file:
                     prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('{{STUDENT_CODE_HERE}}'), indent=2, default=str)
 
-                    out = ConfigParser(allow_no_value=True, interpolation=None)
+                    out = ConfigParser(allow_no_value=True, interpolation=None, comment_prefixes=(';',))
                     out['global'] = {
                         'instructor': args.instructor,
                         'tester': os.getlogin(),
