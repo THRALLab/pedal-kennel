@@ -86,20 +86,20 @@ def gpt_get_default_prompts(code=None, report=MAIN_REPORT):
 
     prompts = {
         'feedback': (shared_messages, feedback_function, 0.7, 0.5),
-        'score': (shared_messages, score_function, 0.1, 0.5)
+        # 'score': (shared_messages, score_function, 0.1, 0.5)
     }
 
     def process_prompts(results):
-        #if results['feedback']['is_error_present']:
+        # if results['feedback']['is_error_present']:
         gpt_prompt_feedback({
             'feedback': results['feedback']['feedback'],
-            'score': results['score']['score'],
-            'error': results['score']['error']
+            # 'score': results['score']['score'],
+            # 'error': results['score']['error']
         })
 
         # Debug code
         print('Feedback result:\n' + str(results['feedback']))
-        print('Score result:\n' + str(results['score']))
+        # print('Score result:\n' + str(results['score']))
         print()
 
     return prompts, process_prompts

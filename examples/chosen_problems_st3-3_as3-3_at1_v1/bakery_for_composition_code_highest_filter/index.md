@@ -1,0 +1,1 @@
+Define the function `high_score` that consumes a list of integers (representing scores in a game) and produces an integer representing the highest score in the list. Ignore scores less than `100`, and stop processing values if you encounter `-999`. If the list is empty, return the value `None` instead. It is up to you to decompose this function (or not) however you want.

@@ -12,10 +12,11 @@ from pedal import MAIN_REPORT, Submission
 from pedal.command_line.modes import AbstractPipeline, BundleResult, get_python_files, Bundle
 from pedal.core.feedback_category import FeedbackCategory
 from pedal.gpt.constants import TOOL_NAME as GPT_TOOL_NAME
+from pedal.gpt import gpt_run_prompts
+from pedal.gpt.feedbacks import gpt_prompt_feedback
 from pedal.utilities.files import find_possible_filenames, normalize_path
 
 arg_parser = argparse.ArgumentParser(description='Run student code through Pedal and store the feedback.')
-arg_parser.add_argument('-m', '--max_submissions', type=int, action='store', default=0)
 arg_parser.add_argument('-i', '--instructor', type=str, action='store', default='Instructor')
 
 args = arg_parser.parse_args()
@@ -28,27 +29,27 @@ class SubmissionBlock:
     gpt_feedback = ''
     gpt_feedback_length = ''
     # gpt_feedback_word_probability = -1
-    gpt_error_type = ''
+    # gpt_error_type = ''
     gpt_score = -1
     pedal_feedback = ''
     pedal_feedback_length = -1
     # pedal_feedback_word_probability = -1
     pedal_score = -1
-    rubric_fields = None
-    instructor_feedback = None
+    # rubric_fields = None
+    # instructor_feedback = None
 
     def add_to_output(self, assignment: str, filename: str, cfg: ConfigParser) -> None:
         cfg[f'{assignment}.{filename}'] = {
             'student_code':          self.student_code,
             'gpt_feedback':          self.gpt_feedback,
             'gpt_feedback_length':   self.gpt_feedback_length,
-            'gpt_error_type':        self.gpt_error_type,
+            # 'gpt_error_type':        self.gpt_error_type,
             'gpt_score':             self.gpt_score,
             'pedal_feedback':        self.pedal_feedback,
             'pedal_feedback_length': self.pedal_feedback_length,
             'pedal_score':           self.pedal_score,
-            'rubric_fields':         self.rubric_fields,
-            'instructor_feedback':   self.instructor_feedback
+            # 'rubric_fields':         self.rubric_fields,
+            # 'instructor_feedback':   self.instructor_feedback
         }
 
 
@@ -73,10 +74,70 @@ class AssignmentBlock:
             submission.add_to_output(self.assignment, filename, cfg)
 
 
+def get_prompts_getter(temp, top_p):  # yes I know this is horrible
+    def get_default_prompts(code=None, report=MAIN_REPORT):
+        """
+        Returns each prompt to run, as well as the processing function that generates feedback
+        from the results. If there is an error at any point, the processing function is never called.
+
+        Args:
+            code (str or None): The student's code to evaluate. If ``code`` is not
+                given, then it will default to the student's main file.
+            report (:class:`pedal.core.report.Report`): The Report object to
+                attach results to.
+        """
+        shared_messages = [
+            {
+                'role': 'system',
+                'content': "You are an intelligent tutor for a introductory computer science course in Python. " +
+                           "You never give answers but do give helpful tips to guide students with their code."
+            },
+            {
+                'role': 'user',
+                'content': code
+            }
+        ]
+        feedback_function = {
+            'name': 'add_code_feedback',
+            'description': 'Adds feedback on the code for the student to view.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'feedback': {
+                        'type': 'string',
+                        'description': 'Helpful tips to guide a student with their problematic code.'
+                    },
+                    'is_error_present': {
+                        'type': 'boolean',
+                        'description': 'If there is a problem with the code, this parameter is true.'
+                    }
+                },
+                'required': ['feedback', 'is_error_present']
+            }
+        }
+
+        prompts = {
+            'feedback': (shared_messages, feedback_function, temp, top_p)
+        }
+
+        def process_prompts(results):
+            gpt_prompt_feedback({
+                'feedback': results['feedback']['feedback'],
+                'score': 0.0
+            })
+
+        return prompts, process_prompts
+
+    return get_default_prompts
+
+
 class SubmissionBundle(Bundle):
-    def __init__(self, config, script, submission):
+    def __init__(self, config, script, submission, gpt_model, temp, top_p):
         super().__init__(config, script, submission)
         self.gpt_feedback = None
+        self.gpt_model = gpt_model
+        self.temp = temp
+        self.top_p = top_p
 
     def run_ics_bundle(self, resolver='resolve', skip_tifa=False, skip_run=False):
         """
@@ -103,6 +164,12 @@ class SubmissionBundle(Bundle):
                     grader_exec = compile(self.script,
                                           self.submission.instructor_file, 'exec')
                     exec(grader_exec, global_data)
+                    if 'MAIN_REPORT' in global_data:
+                        global_data['MAIN_REPORT'][GPT_TOOL_NAME]['model'] = self.gpt_model
+                        global_data['MAIN_REPORT'][GPT_TOOL_NAME]['prompts_getter'] = get_prompts_getter(self.temp, self.top_p)
+                        gpt_run_prompts()
+                    else:
+                        print('ERROR! No main report object found!')
 
                     for feedback in MAIN_REPORT.feedback:
                         if feedback.category == FeedbackCategory.PATTERNS:
@@ -127,10 +194,13 @@ class SubmissionBundle(Bundle):
 
 
 class SubmissionPipeline(AbstractPipeline):
-    def __init__(self, current_submission: SubmissionBlock, config):
+    def __init__(self, gpt_model, temp, top_p, current_submission: SubmissionBlock, config):
         super().__init__(config)
+        self.gpt_model = gpt_model
+        self.temp = temp
+        self.top_p = top_p
         self.current_submission = current_submission
-        with open(self.config.submissions) as student_code:
+        with open(self.config.submissions, encoding='utf-8') as student_code:
             self.current_submission.student_code = '\n' + student_code.read().strip()
 
     def load_file_submissions(self, scripts):
@@ -140,7 +210,7 @@ class SubmissionPipeline(AbstractPipeline):
             script_file_name, script_file_extension = os.path.splitext(script)
             # Single Python file
             if script_file_extension in ('.py',):
-                with open(script, 'r') as scripts_file:
+                with open(script, 'r', encoding='utf-8') as scripts_file:
                     scripts_contents = scripts_file.read()
                 all_scripts.append((script, scripts_contents))
         given_submissions = self.config.submissions
@@ -159,7 +229,7 @@ class SubmissionPipeline(AbstractPipeline):
                         main_file=main_file, main_code=main_code,
                         instructor_file=script
                     )
-                    self.submissions.append(SubmissionBundle(self.config, scripts_contents, new_submission))
+                    self.submissions.append(SubmissionBundle(self.config, scripts_contents, new_submission, self.gpt_model, self.temp, self.top_p))
         # Otherwise, if the submission is a single file:
         # Maybe it's a Progsnap DB file?
         elif given_submissions.endswith('.db'):
@@ -193,15 +263,15 @@ class SubmissionPipeline(AbstractPipeline):
                     main_file=main_file, main_code=main_code,
                     instructor_file=script, load_error=load_error
                 )
-                self.submissions.append(SubmissionBundle(self.config, scripts_contents, new_submission))
+                self.submissions.append(SubmissionBundle(self.config, scripts_contents, new_submission, self.gpt_model, self.temp, self.top_p))
             return load_error
 
     def run_control_scripts(self):
         for bundle in self.submissions:
-            bundle.script += '\nfrom pedal.gpt import gpt_run_prompts\ngpt_run_prompts()'
-            bundle.run_ics_bundle(resolver=self.config.resolver,
-                                  skip_tifa=self.config.skip_tifa,
-                                  skip_run=self.config.skip_run)
+            bundle.run_ics_bundle(
+                resolver=self.config.resolver,
+                skip_tifa=self.config.skip_tifa,
+                skip_run=self.config.skip_run)
 
     def process_output(self):
         if len(self.submissions) != 1:
@@ -224,70 +294,73 @@ class SubmissionPipeline(AbstractPipeline):
 
 
 # read in all student programs
-num_submissions_processed = 0
 assignments = []
 script_parent_dir = os.path.dirname(os.path.realpath(__file__))
 
-for directory in os.listdir(script_parent_dir):
-    if not os.path.isdir(directory) or not directory.startswith('bakery'):
-        continue
+gpt_models = ['gpt-4-0613']
+temps = [0.0, 1.0, 2.0]
+top_ps = [0.0, 1.0]
+directories = [entry for entry in os.listdir(script_parent_dir) if not entry.startswith('_') and not entry.endswith('.py')]
+trials = 3
 
-    assignment = AssignmentBlock()
-    assignment.assignment = directory
-    with open(f'{directory}/index.md') as description:
-        assignment.description = description.read().strip()
+num_assignments_total = len(gpt_models) * len(temps) * len(top_ps) * len(directories) * trials
+assignments_processed = 0
 
-    print(f'Processing assignment {directory}')
+for gpt_model in gpt_models:
+    for temp in temps:
+        for top_p in top_ps:
+            for trial in range(trials):
+                for directory in directories:
+                    assignment = AssignmentBlock()
+                    assignment.assignment = directory
+                    with open(f'{script_parent_dir}/{directory}/index.md') as description:
+                        assignment.description = description.read().strip()
 
-    path = f'{script_parent_dir}/{directory}/submissions/'
-    for file in os.listdir(path):
-        filepath = path + file
-        if not file.endswith('.py') or os.stat(filepath).st_size == 0:
-            continue
+                    assignments_processed += 1
+                    print(f'Processing assignment {directory} ({assignments_processed} / {num_assignments_total})')
 
-        num_submissions_processed += 1
-        if 0 < args.max_submissions < num_submissions_processed:
-            break
+                    path = f'{script_parent_dir}/{directory}/submissions/'
+                    for file in os.listdir(path):
+                        filepath = path + file
+                        if not file.endswith('.py') or os.stat(filepath).st_size == 0:
+                            continue
 
-        print(f'- Processing submission {file}')
+                        print(f'- Processing submission {file}')
 
-        submission = SubmissionBlock()
+                        submission = SubmissionBlock()
 
-        pipeline = SubmissionPipeline(submission, {
-            'instructor': f'{directory}/on_run.py',
-            'submissions': filepath,
-            'environment': 'blockpy',
-            'resolver': 'resolve',
-            'skip_tifa': False,
-            'skip_run': False,
-            'threaded': False,
-            'alternate_filenames': False,
-            'ics_direct': False
-        })
-        pipeline.execute()
+                        pipeline = SubmissionPipeline(gpt_model, temp, top_p, submission, {
+                            'instructor': f'{script_parent_dir}/{directory}/on_run.py',
+                            'submissions': filepath,
+                            'environment': 'blockpy',
+                            'resolver': 'resolve',
+                            'skip_tifa': False,
+                            'skip_run': False,
+                            'threaded': False,
+                            'alternate_filenames': False,
+                            'ics_direct': False
+                        })
+                        pipeline.execute()
 
-        assignment.add_submission(file, submission)
+                        assignment.add_submission(file, submission)
 
-    assignments.append(assignment)
+                    assignments.append(assignment)
 
-    if 0 < args.max_submissions < num_submissions_processed:
-        break
+                # write results to file
+                with open(f'{script_parent_dir}/_feedback_results/{gpt_model}-temp-{temp}-top_p-{top_p}-{trial}.ini', 'w') as out_file:
+                    prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('{{STUDENT_CODE_HERE}}'), indent=2, default=str)
 
-# write results to file
-with open('feedback_results.ini', 'w') as out_file:
-    prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('{{STUDENT_CODE_HERE}}'), indent=2, default=str)
+                    out = ConfigParser(allow_no_value=True, interpolation=None)
+                    out['global'] = {
+                        'instructor': args.instructor,
+                        'tester': os.getlogin(),
+                        'gpt_model': MAIN_REPORT[GPT_TOOL_NAME]['model'],
+                        'gpt_prompt': prompt,
+                        'gpt_prompt_approximate_length': len(prompt.split(' '))
+                    }
 
-    out = ConfigParser(allow_no_value=True, interpolation=None)
-    out['global'] = {
-        'instructor': args.instructor,
-        'tester': os.getlogin(),
-        'gpt_model': MAIN_REPORT[GPT_TOOL_NAME]['model'],
-        'gpt_prompt': prompt,
-        'gpt_prompt_approximate_length': len(prompt.split(' '))
-    }
+                    for assignment in assignments:
+                        assignment.add_to_output(out)
 
-    for assignment in assignments:
-        assignment.add_to_output(out)
-
-    out.write(out_file)
-    print('Results written to file!')
+                    out.write(out_file)
+                    print('Results written to file!')

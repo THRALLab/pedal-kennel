@@ -1,0 +1,1 @@
+<p>The functions below calculate whether a given hour is in the morning (between 5am <em>and</em> 12pm). The first function <code>is_morning</code> (incomplete) has two helper functions (<code>is_past_dawn</code> and <code>is_before_noon</code>, both complete). Finish the <code>is_morning</code> function to call the other two.</p>
