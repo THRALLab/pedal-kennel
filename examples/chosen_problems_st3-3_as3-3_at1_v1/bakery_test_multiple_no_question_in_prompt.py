@@ -309,7 +309,7 @@ trials = 3
 
 num_assignments_total = len(gpt_models) * len(temps) * len(top_ps) * len(directories) * trials
 assignments_processed = 0
-
+"""
 print('Now processing the final combination of temp and top_p (if you don\'t want to, comment out lines 308 to 370):')
 
 parameters = product(gpt_models, temps, top_ps, list(range(trials)))
@@ -368,7 +368,7 @@ for gpt_model, temp, top_p, trial in parameters:
 
         out.write(out_file)
         print('Results written to file!')
-
+"""
 
 # now process the two remaining assignments not in the initial dataset
 temps = [0.0, 1.0, 2.0]
