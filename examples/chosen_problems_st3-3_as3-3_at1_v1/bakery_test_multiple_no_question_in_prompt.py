@@ -383,6 +383,8 @@ print('Now processing the final two assignments which were not part of the initi
 parameters = product(gpt_models, temps, top_ps, list(range(trials)))
 for gpt_model, temp, top_p, trial in parameters:
     if math.floor(temp) == 2 and math.floor(top_p) == 1:
+        assignments_processed += 1
+        print(f'Skipping invalid combo... ({assignments_processed} / {num_assignments_total})')
         continue  # already collected this data
 
     for directory in directories:
