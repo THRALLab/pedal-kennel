@@ -220,7 +220,7 @@ class SubmissionPipeline(AbstractPipeline):
             script_file_name, script_file_extension = os.path.splitext(script)
             # Single Python file
             if script_file_extension in ('.py',):
-                with open(script, 'r', encoding='utf-8') as scripts_file:
+                with open(script, encoding='utf-8') as scripts_file:
                     scripts_contents = scripts_file.read()
                 all_scripts.append((script, scripts_contents))
         given_submissions = self.config.submissions
@@ -256,7 +256,7 @@ class SubmissionPipeline(AbstractPipeline):
             # Run through all possible filenames
             for possible in alternatives:
                 try:
-                    with open(possible, 'r') as single_submission_file:
+                    with open(possible, encoding='utf-8') as single_submission_file:
                         main_code = single_submission_file.read()
                         main_file = possible
                     break
@@ -326,7 +326,7 @@ for gpt_model, temp, top_p, trial in parameters:
     for directory in directories:
         assignment = AssignmentBlock()
         assignment.assignment = directory
-        with open(f'{script_parent_dir}/{directory}/index.md') as description:
+        with open(f'{script_parent_dir}/{directory}/index.md', encoding='utf-8') as description:
             assignment.description = description.read().strip()
 
         assignments_processed += 1
@@ -360,7 +360,7 @@ for gpt_model, temp, top_p, trial in parameters:
         assignments.append(assignment)
 
     # write results to file
-    with open(f'{script_parent_dir}/_feedback_results/{gpt_model}-temp-{temp}-top_p-{top_p}-{trial}.ini', 'w') as out_file:
+    with open(f'{script_parent_dir}/_feedback_results/{gpt_model}-temp-{temp}-top_p-{top_p}-{trial}.ini', 'w', encoding='utf-8') as out_file:
         prompt = json.dumps(MAIN_REPORT[GPT_TOOL_NAME]['prompts_getter']('{{STUDENT_CODE_HERE}}'), indent=2, default=str)
 
         out = ConfigParser(allow_no_value=True, interpolation=None, comment_prefixes=(';',))
