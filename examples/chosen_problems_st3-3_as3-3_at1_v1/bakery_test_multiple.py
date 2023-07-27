@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import os
 import sys
 from configparser import ConfigParser
@@ -317,6 +318,11 @@ assignments_processed = 0
 
 parameters = product(gpt_models, temps, top_ps, list(range(trials)))
 for gpt_model, temp, top_p, trial in parameters:
+    if math.floor(temp) == 2 and math.floor(top_p) == 1:
+        assignments_processed += 1
+        print(f'Skipping invalid combo... ({assignments_processed} / {num_assignments_total})')
+        continue  # already collected this data
+
     for directory in directories:
         assignment = AssignmentBlock()
         assignment.assignment = directory
