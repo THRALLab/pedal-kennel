@@ -399,7 +399,7 @@ for gpt_model, temp, top_p, trial in parameters:
         path = f'{script_parent_dir}/{directory}/submissions/'
         for file in os.listdir(path):
             filepath = path + file
-            if not file.endswith('.py') or os.stat(filepath).st_size == 0:
+            if file.startswith('bakery') or not file.endswith('.py') or os.stat(filepath).st_size == 0:
                 continue
 
             print(f'- Processing submission {file}')
