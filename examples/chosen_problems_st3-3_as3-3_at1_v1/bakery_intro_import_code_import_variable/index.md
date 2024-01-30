@@ -1,0 +1,1 @@
+The file `my_second_module.py` is available to be imported into your program, and contains a string variable named `art`. Import the variable from the module, and print its contents.

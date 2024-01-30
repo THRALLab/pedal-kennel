@@ -1,0 +1,1 @@
+Create a list of 3 strings that represent the names of your favorite books and store them in a variable. Print this variable.

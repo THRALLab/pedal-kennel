@@ -1,0 +1,1 @@
+The code below has an error. Consult the [String functions reference page](https://python-sneks.github.io/pages/v3_0/references/strings.html) and fix the error so that it correctly makes the string entirely uppercase.

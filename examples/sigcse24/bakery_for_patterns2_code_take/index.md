@@ -1,0 +1,1 @@
+Use the Take pattern to define a function `until_period` that consumes a list of strings and produces a list of strings. Keep including strings until you encounter a period (`'.'`), but don't include the period in the return result.
