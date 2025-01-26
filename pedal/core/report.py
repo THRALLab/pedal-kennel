@@ -327,8 +327,8 @@ class Report:
             str: The JSON string representation of the Report instance.
         """
         report_dict = {
-            'feedback': [feedback.to_dict() for feedback in self.feedback],
-            'ignored_feedback': [feedback.to_dict() for feedback in self.ignored_feedback],
+            'feedback': [feedback.to_json() for feedback in self.feedback],
+            'ignored_feedback': [feedback.to_json() for feedback in self.ignored_feedback],
             'suppressions': self.suppressions,
             'suppressed_labels': self.suppressed_labels,
             'hiddens': list(self.hiddens),
@@ -337,14 +337,15 @@ class Report:
             'group_names': self.group_names,
             'hooks': self.hooks,
             'class_hooks': self.class_hooks,
-            'submission': self.submission.to_dict() if self.submission else None,
-            'format': self.format.to_dict(),
-            'result': self.result.to_dict() if self.result else None,
+            'submission': self.submission.to_json() if self.submission else None,
+            #'format': self.format, #.to_dict(),
+            'result': self.result.to_json() if self.result else None,
             'resolves': self.resolves,
             'pools': self.pools,
             'chosen_pool': self.chosen_pool,
             'overridden_feedbacks': list(self.overridden_feedbacks)
         }
+
         return json.dumps(report_dict, indent=4)
 
 

@@ -6,7 +6,10 @@ from pedal.resolvers.export import PedalJSONEncoder, clean_json
 from pedal.resolvers.core import make_resolver
 from pedal.resolvers.simple import by_priority
 
-import requests
+
+# commented out by Olivia - seems like this is not complete yet and its causing errors
+#import requests
+
 
 @make_resolver
 def resolve(report=MAIN_REPORT, priority_key=by_priority):
@@ -32,14 +35,19 @@ def resolve(report=MAIN_REPORT, priority_key=by_priority):
         if partial is not None:
             used.append(partial)
 
-    final_data = final.to_json()
+    # final_data = final.to_json() - final data got replaced by report_data
     print(report)
     print(used)
 
+
+    report_data = report.to_json()
+
     # Write final_data to a file
     with open('final_data.json', 'w') as file:
-        json.dump(final_data, file, indent=4)
+        json.dump(report_data, file, indent=4)
 
+# commented out by olivia because we are not using it yet
+    '''
     # Send the report to the server
     try:
         response = requests.post("http://localhost:8000/", json=final_data)
@@ -52,7 +60,7 @@ def resolve(report=MAIN_REPORT, priority_key=by_priority):
             print("Failed to get a valid response from the server:", response.status_code)
     except requests.ConnectionError:
         print("Failed to connect to the server")
-
+    '''
     # Not sure if you would want to make Alchemy's return a Feedback item so it can be added to result or something else entirely.
     # Override empty message
     final.finalize()
