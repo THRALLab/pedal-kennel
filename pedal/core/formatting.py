@@ -84,6 +84,9 @@ class Formatter:
         feedback and settings. """
         self.report = report
 
+    def to_json(self):
+        return {}
+
     def update_report(self, report):
         """ Change the currently set report for this formatter. """
         self.report = report

@@ -338,14 +338,13 @@ class Report:
             'hooks': self.hooks,
             'class_hooks': self.class_hooks,
             'submission': self.submission.to_json() if self.submission else None,
-            #'format': self.format, #.to_dict(),
+            'format': self.format.to_json(), #.to_dict(),
             'result': self.result.to_json() if self.result else None,
             'resolves': self.resolves,
-            'pools': self.pools,
-            'chosen_pool': self.chosen_pool,
-            'overridden_feedbacks': list(self.overridden_feedbacks)
+            'pools': [pool.to_json() for pool in self.pools],
+            'chosen_pool': self.chosen_pool.to_json() if self.chosen_pool else None,
+            'overridden_feedbacks': [overridden_feedback.to_json() for overridden_feedback in self.overridden_feedbacks]
         }
-
         return json.dumps(report_dict, indent=4)
 
 

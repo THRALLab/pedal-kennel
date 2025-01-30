@@ -22,6 +22,15 @@ class Pool:
             Pool._POOL_TRACKER += 1
         self.position = position
 
+    def to_json(self):
+        return {
+            'name': self.name,
+            'choices': self.choices,
+            'seed': self.seed,
+            'report': self.report.to_json() if self.report else None,
+            'position': self.position
+        }
+
     def __enter__(self):
         Pool._CURRENT.append(self)
         return self
