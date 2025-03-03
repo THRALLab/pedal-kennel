@@ -1,0 +1,8 @@
+{
+    "assignment_name": "#11) Reading",
+    "assignment_id": "sneks_variables_assignment_reading",
+    "instructions": "{\"header\":\"Variables\",\"slides\":\"https://python-sneks.github.io/pages/v4_0/slides/Variables.pdf\",\"youtube\":\"X92iyr6WNEA\",\"summary\":\"In this lesson, you will learn about how to create variables by using assignment statements, and then read and use those variables in your programs.\"}",
+    "contextualized_report": null,
+    "query_used": "SELECT * FROM LinkAssignment ORDER BY AssignmentID DESC LIMIT 1",
+    "dataset_location": "LinkAssignment"
+}
