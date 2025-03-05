@@ -461,7 +461,7 @@ class Feedback:
             'kind': self.kind,
             'valence': self.valence,
             'version': self.version,
-            'fields': self._fields_to_json(),
+            'fields': [field for field in self.fields],
             'justification': self.justification,
             'priority': self.priority,
             'location': self.location.to_json() if self.location is not None else None
