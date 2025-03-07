@@ -31,9 +31,9 @@ class FinalFeedback:
 
     # TODO: Change all these so that FinalFeedback also logs considered feedback
 
-    def __init__(self, correct=None, score=None, category=None, label=None, title=None,
+    def __init__(self, correct=None, score=None, scores=[], category=None, label=None, title=None,
                  message=None, data=None, hide_correctness=None,
-                 suppressions=None, suppressed_labels=None, success=None):
+                 suppressions=None, suppressed_labels=None, success=None, location=None):
         """
 
         Args:
@@ -67,6 +67,7 @@ class FinalFeedback:
         self.suppressed_labels = suppressed_labels
         self.considered = []
         self.used = []
+        self.location = location
 
     def merge(self, feedback):
         self.considered.append(feedback)
@@ -207,6 +208,9 @@ class FinalFeedback:
                 json.dump(self.to_json(), f)
             else:
                 f.write(self.for_console())
+
+    def copy(self):
+        return FinalFeedback(**self.to_json())
 
 def deserialize_final_feedback(json_string):
     """
