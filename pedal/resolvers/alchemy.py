@@ -36,17 +36,18 @@ def resolve(report=MAIN_REPORT, priority_key=by_priority):
             used.append(partial)
 
     # final_data = final.to_json() - final data got replaced by report_data
-    print(report)
-    print(used)
-
+    #print(report)
+    #print(used)
 
     report_data = report.to_json()
+    #print(report_data)
 
-    # Write final_data to a file
+    parsed_data = json.loads(report_data)
+
     with open('final_data.json', 'w') as file:
-        json.dump(report_data, file, indent=4)
+        json.dump(parsed_data, file, indent=4)
 
-# commented out by olivia because we are not using it yet
+    # commented out by olivia because we are not using it yet
     '''
     # Send the report to the server
     try:

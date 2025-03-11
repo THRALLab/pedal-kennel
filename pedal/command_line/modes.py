@@ -16,6 +16,7 @@ import argparse
 
 from pedal.command_line.report import StatReport
 from pedal.command_line.verify import generate_report_out, ReportVerifier
+from pedal.core.final_feedback import FinalFeedback
 from pedal.core.report import MAIN_REPORT
 from pedal.core.submission import Submission
 from pedal.utilities.files import normalize_path, find_possible_filenames
@@ -71,16 +72,19 @@ class BundleResult:
         self.resolution = resolution
 
     def to_json(self):
-        resolution = self.resolution.copy() if self.resolution else {}
-        #if 'considered' in resolution:
-        #    for c in resolution['considered']:
-        #        if 'fields' in c:
-        #            del c['fields']
-        return dict(
-            output=self.output,
-            error=self.error,
-            **resolution
-        )
+            resolution = ({'final': self.resolution.to_json()}
+                        if isinstance(self.resolution, FinalFeedback)
+                        else self.resolution.copy() 
+                        if self.resolution else {})
+            #if 'considered' in resolution:
+            #    for c in resolution['considered']:
+            #        if 'fields' in c:
+            #            del c['fields']
+            return dict(
+                output=self.output,
+                error=self.error,
+                **resolution
+            )
 
 class Bundle:
     """
@@ -434,11 +438,13 @@ class AlchemyPipeline(AbstractPipeline):
             print("Total Processed:", total)
             print("Errors:", errors)
             pedal_json_encoder = PedalJSONEncoder(indent=2, skipkeys=True)
-            if self.config.output == 'stdout':
-                print(pedal_json_encoder.encode(final))
-            else:
-                with open(self.config.output, 'w') as output_file:
-                    print(pedal_json_encoder.encode(final), file=output_file)
+            # maybe of use or interesting...includes more info but only after the pipeline is ran...
+            
+            # if self.config.output == 'stdout':
+            #     print(pedal_json_encoder.encode(final))
+            # else:
+            #     with open(self.config.output, 'w') as output_file:
+            #         print(pedal_json_encoder.encode(final), file=output_file)
         return StatReport(final)
 
 
