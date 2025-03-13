@@ -163,12 +163,16 @@ class Submission:
         self.line_offsets.clear()
 
     def to_json(self):
-        return dict(
-            user=self.user,
-            assignment=self.assignment,
-            course=self.course,
-            execution=self.execution,
-            files=self.files.copy()
-        )
+        return {
+            k: v.copy() if isinstance(v, dict) else v
+            for k, v in {
+                "user": self.user,
+                "assignment": self.assignment,
+                "course": self.course,
+                "execution": self.execution,
+                "files": self.files
+            }.items()
+            if v not in [None, [], {}, ""]
+        }
 
 

@@ -327,24 +327,30 @@ class Report:
             str: The JSON string representation of the Report instance.
         """
         report_dict = {
-            'feedback': [feedback.to_json() for feedback in self.feedback],
-            'ignored_feedback': [feedback.to_json() for feedback in self.ignored_feedback],
-            'suppressions': self.suppressions,
-            'suppressed_labels': self.suppressed_labels,
-            'hiddens': list(self.hiddens),
-            'groups': self.groups,
-            'group': self.group,
-            'group_names': self.group_names,
-            'hooks': self.hooks,
-            'class_hooks': self.class_hooks,
+            'feedback': [feedback.to_json() for feedback in self.feedback] if self.feedback else None,
+            'ignored_feedback': [feedback.to_json() for feedback in
+                                 self.ignored_feedback] if self.ignored_feedback else None,
+            'suppressions': self.suppressions if self.suppressions else None,
+            'suppressed_labels': self.suppressed_labels if self.suppressed_labels else None,
+            'hiddens': list(self.hiddens) if self.hiddens else None,
+            'groups': self.groups if self.groups else None,
+            'group': self.group if self.group else None,
+            'group_names': self.group_names if self.group_names else None,
+            'hooks': self.hooks if self.hooks else None,
+            'class_hooks': self.class_hooks if self.class_hooks else None,
             'submission': self.submission.to_json() if self.submission else None,
-            'format': self.format.to_json(), #.to_dict(),
+            'format': self.format.to_json() if self.format else None,
             'result': self.result.to_json() if self.result else None,
-            'resolves': self.resolves,
-            'pools': [pool.to_json() for pool in self.pools],
+            'resolves': self.resolves if self.resolves else None,
+            'pools': [pool.to_json() for pool in self.pools] if self.pools else None,
             'chosen_pool': self.chosen_pool.to_json() if self.chosen_pool else None,
-            'overridden_feedbacks': [overridden_feedback.to_json() for overridden_feedback in self.overridden_feedbacks]
+            'overridden_feedbacks': [overridden_feedback.to_json() for overridden_feedback in
+                                     self.overridden_feedbacks] if self.overridden_feedbacks else None
         }
+
+        # Remove None values from the dictionary
+        report_dict = {k: v for k, v in report_dict.items() if v not in [None, [], {}]}
+
         return json.dumps(report_dict, indent=4)
 
 

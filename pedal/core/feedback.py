@@ -448,7 +448,7 @@ class Feedback:
         return self.fields.copy()
 
     def to_json(self):
-        return {
+        report = {
             'correct': self.correct,
             'score': self.score,
             'title': self.title,
@@ -461,11 +461,14 @@ class Feedback:
             'kind': self.kind,
             'valence': self.valence,
             'version': self.version,
-            'fields': [field for field in self.fields],
+            'fields': [field for field in self.fields] if self.fields else None,
             'justification': self.justification,
             'priority': self.priority,
             'location': self.location.to_json() if self.location is not None else None
         }
+
+        # Remove fields that are None, empty lists, empty dictionaries, or empty strings
+        return {k: v for k, v in report.items() if v not in [None, [], {}, ""]}
 
     @classmethod
     def override(cls, report=MAIN_REPORT, **fields):

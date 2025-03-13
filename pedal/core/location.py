@@ -58,10 +58,13 @@ class Location:
         Returns:
             Dict[str,Any]: The JSON version of this location information.
         """
-        return {
+        location_data = {
             "line": self.line,
             "col": self.col,
             "end_line": self.end_line,
             "end_col": self.end_col,
             "filename": self.filename
         }
+
+        # Remove fields that are None, empty lists, empty dictionaries, or empty strings
+        return {k: v for k, v in location_data.items() if v not in [None, [], {}, ""]}
