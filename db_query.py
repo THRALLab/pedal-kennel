@@ -1,76 +1,69 @@
-from sqlalchemy import create_engine, MetaData, Table, inspect, select
+import os
+from sqlalchemy import create_engine, MetaData, Table, select, and_, func
 from pedal.core.submission import Submission
 from pedal.core.commands import contextualize_report
 
-#database path
-db_path = 'sqlite:////Users/elizabethdassoulas/Desktop/VIP/v3.db'
-
-#to create database engine
+# Database path
+db_path = 'sqlite:////Users/u001m/BlockPyProject/sample_data_spring_2025.db'
 engine = create_engine(db_path)
 
-# Use an inspector to get table names
-inspector = inspect(engine)
-table_names = inspector.get_table_names()
-
-# To rint all table names
-print("Tables in the database:", table_names)
-
-#Chose LinkAssignment as my table to work with
-table_name = 'LinkAssignment'
-
-# To reflect the selected table
+# Reflect tables
 metadata = MetaData()
-table = Table(table_name, metadata, autoload_with=engine)
-print(table.columns)
+main_table = Table('MainTable', metadata, autoload_with=engine)
+code_state = Table('CodeState', metadata, autoload_with=engine)
+link_assignment = Table('LinkAssignment', metadata, autoload_with=engine)
+
+# Directory to save files (can be customized)
+output_dir = "output_code"
+os.makedirs(output_dir, exist_ok=True)
+
+# put the assignment_id you want to pull here
+assignment_id = "bakery_intro_string_ops_code_string_tests";
 
 
-
-# Query data from table
-#with engine.connect() as conn:
- #   result = conn.execute(table.select()).fetchall()
- #   for row in result:
- #       print(row)
-
-
-def fetch_latest_submission():
-    """Retrieve the most recent student submission from the database."""
+def fetch_custom_submission():
+    """Fetch a specific submission and save student/instructor code to files."""
     with engine.connect() as conn:
-        query = select(table).order_by(table.c.AssignmentID.desc()).limit(1)
+        query = (
+            select(code_state.c.Contents, link_assignment.c.CodeOnRun)
+            .select_from(
+                main_table
+                .join(code_state, main_table.c.CodeStateID == code_state.c.CodeStateID)
+                .join(link_assignment, main_table.c.AssignmentID == link_assignment.c.AssignmentID)
+            )
+            .where(
+                and_(
+                    main_table.c.AssignmentID == assignment_id,
+                    func.length(code_state.c.Contents) != 0,
+                    func.length(link_assignment.c.CodeOnRun) != 0
+                )
+            )
+        )
+
         result = conn.execute(query).fetchone()
 
         if result:
-            # Print the result to inspect available data
-            print("Query result:", result)
+            student_code = result.Contents
+            instructor_code = result.CodeOnRun
 
-            assignment_id = result[0]  # AssignmentID
-            assignment_name = result[2]  # Name (assignment name)
-            instructions = result[6]  # Instructions (perhaps it's used as a description)
+            # Save to files
+            student_file_path = "examples/submissions/unused.py"
+            instructor_file_path = "examples/blank_instructor.py"
 
-            # For now, let's use "instructions" as part of the contextualization, or whatever makes sense
+            with open(student_file_path, "w", encoding="utf-8") as f:
+                f.write(student_code)
+            with open(instructor_file_path, "w", encoding="utf-8") as f:
+                f.write(instructor_code)
+
+            print(f"Student code written to: {student_file_path}")
+            print(f"Instructor code written to: {instructor_file_path}")
+
             return {
-                "assignment_id": assignment_id,
-                "assignment_name": assignment_name,
-                "instructions": instructions,  # Add instructions or other relevant fields
+                "assignment_name": assignment_id,
+                "contents": student_code,
+                "code_on_run": instructor_code
             }
+
     return None
 
-
-def contextualize_submission():
-    """Fetch submission from the database and pass it to contextualize_report."""
-    submission_data = fetch_latest_submission()
-
-    if submission_data:
-        # Use the retrieved assignment name and instructions, or modify to suit your needs
-        print(f"Processing submission for {submission_data['assignment_name']}")
-
-        # Placeholder for files
-        files = {submission_data["assignment_name"]: submission_data["instructions"]}
-
-        # Create a submission (you may need to adjust the keys)
-        submission = Submission(files, user={"name": submission_data["assignment_name"]})
-
-        # Contextualize the report with the submission
-        contextualize_report(submission)
-        print(f"Submission for {submission_data['assignment_name']} has been contextualized.")
-    else:
-        print("No submission found in the database.")
+fetch_custom_submission()
